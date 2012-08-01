@@ -124,7 +124,7 @@ public class OwlParser implements IModelParser, IModelSerializer {
 		INamespaceDefinition ns = (INamespaceDefinition) resolver.newLanguageObject(INamespace.class);
 		ns.setId(namespace);
 		ns.setResourceUrl(resource);
-		ns.initialize();
+//		ns.initialize();
 		
 		resolver.onNamespaceDeclared();
 		
@@ -324,7 +324,7 @@ public class OwlParser implements IModelParser, IModelSerializer {
 		INamespace nns = _namespaces.get(ns);
 		((INamespaceDefinition)nns).setResourceUrl(resource);
 		((INamespaceDefinition)nns).setId(namespace);
-		((INamespaceDefinition)nns).initialize();
+//		((INamespaceDefinition)nns).initialize();
 
 		return _namespaces.get(ns);
 	}

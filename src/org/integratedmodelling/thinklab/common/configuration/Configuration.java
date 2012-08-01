@@ -213,15 +213,7 @@ public class Configuration implements IConfiguration {
 
 		return os;
 	}
-
-	public File getProjectDirectory() {
-		return getWorkspace(Session.PROJECTS_WORKSPACE);
-	}
 	
-	public File getProjectDirectory(String projectId) {
-		return getWorkspace(Session.PROJECTS_WORKSPACE + File.separator + projectId);
-	}
-
 	public String getVersion() {
 		// TODO tie to build mechanism
 		return "1.0 rc1";
