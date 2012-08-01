@@ -2,6 +2,11 @@ package org.integratedmodelling.thinklab.common.configuration;
 
 public class Env {
 
+	/*
+	 * default property names
+	 */
+	public static final String THINKLAB_HOME_PROPERTY = "thinklab.home";
+	
 	/**
 	 * The only variable that does not have a default.
 	 */

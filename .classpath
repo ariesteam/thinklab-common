@@ -15,5 +15,7 @@
 	<classpathentry kind="lib" path="lib/jgrapht.jar"/>
 	<classpathentry kind="lib" path="lib/owlapi-bin.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thinklab-api"/>
+	<classpathentry kind="lib" path="lib/reflections-0.9.5.jar"/>
+	<classpathentry kind="lib" path="lib/mvel2-2.0.7.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

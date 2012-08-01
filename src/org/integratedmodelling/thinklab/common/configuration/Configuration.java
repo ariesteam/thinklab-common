@@ -3,11 +3,11 @@ package org.integratedmodelling.thinklab.common.configuration;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.integratedmodelling.exceptions.ThinklabConfigurationException;
 import org.integratedmodelling.exceptions.ThinklabException;
 import org.integratedmodelling.exceptions.ThinklabIOException;
@@ -27,6 +27,8 @@ public class Configuration implements IConfiguration {
 	
 	private static Configuration _this;
 	
+	public static Log log = LogFactory.getLog(Configuration.class);
+	
 	public static Configuration get() {
 		if (_this == null) {
 			try {
@@ -37,6 +39,7 @@ public class Configuration implements IConfiguration {
 		}
 		return _this;
 	}
+	
 	
 	/*
 	 * all configurable paths; others are derived from them.
@@ -50,7 +53,10 @@ public class Configuration implements IConfiguration {
 	
 	public Configuration() throws ThinklabException {
 		
-		String installPath = System.getenv(Env.ENV_THINKLAB_INSTALL_DIR);
+		String installPath = System.getProperty(Env.THINKLAB_HOME_PROPERTY);
+
+		if (installPath == null)	
+			installPath = System.getenv(Env.ENV_THINKLAB_INSTALL_DIR);
 		
 		/*
 		 * try current directory before giving up.
