@@ -45,11 +45,10 @@ public class KnowledgeManager implements IKnowledgeManager {
 	}
 
 	public IOntology requireOntology(String s) {
+		
 		IOntology ret = _ontologies.get(s);
-		if (ret == null) {
-			ret = new Ontology(s);
-			_ontologies.put(s, ret);
-		}
+		// TODO
+		
 		return ret;
 	}
 	

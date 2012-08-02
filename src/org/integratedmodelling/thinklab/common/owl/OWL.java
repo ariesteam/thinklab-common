@@ -31,6 +31,7 @@ import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
+import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDataProperty;
 import org.semanticweb.owlapi.model.OWLDeclarationAxiom;
 import org.semanticweb.owlapi.model.OWLDisjointClassesAxiom;
@@ -39,6 +40,7 @@ import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyAlreadyExistsException;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyID;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLRestriction;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
@@ -57,6 +59,8 @@ import org.semanticweb.owlapi.model.UnloadableImportException;
  */
 public class OWL implements IModelParser, IModelSerializer {
 
+	
+	
 	HashMap<String, INamespace> _namespaces = new HashMap<String, INamespace>();
 	HashMap<String, INamespace> _resourceIndex = new HashMap<String, INamespace>();
 	HashMap<String, INamespace> _iriIndex = new HashMap<String, INamespace>();

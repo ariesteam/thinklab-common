@@ -1,17 +1,24 @@
 package org.integratedmodelling.thinklab.common.owl;
 
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 
 import org.integratedmodelling.exceptions.ThinklabException;
+import org.integratedmodelling.exceptions.ThinklabInternalErrorException;
 import org.integratedmodelling.thinklab.api.knowledge.IAxiom;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IOntology;
 import org.integratedmodelling.thinklab.api.knowledge.IProperty;
 import org.integratedmodelling.thinklab.api.lang.IList;
+import org.integratedmodelling.thinklab.api.metadata.IMetadata;
+import org.semanticweb.owlapi.model.OWLAnnotationProperty;
+import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyChangeException;
+import org.semanticweb.owlapi.model.OWLProperty;
+import org.semanticweb.owlapi.model.PrefixManager;
 
 /**
  * A proxy for an ontology. Holds a list of concepts and a list of axioms. Can be
@@ -25,61 +32,14 @@ import org.integratedmodelling.thinklab.api.lang.IList;
 public class Ontology implements IOntology {
 
 	String _id;
-	String _uriFragment;
 	ArrayList<IList> _axioms = new ArrayList<IList>();
-	HashMap<String, IConcept> _concepts = new HashMap<String, IConcept>();
-
-	public Ontology(String id) {
-		this._id = id;
-		this._uriFragment = id.replace('.', '/');
-	}
-
-	@Override
-	public String getLabel() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getDescription() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getLabel(String languageCode) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getDescription(String languageCode) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void addDescription(String desc) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addDescription(String desc, String language) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addLabel(String desc) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addLabel(String desc, String language) {
-		// TODO Auto-generated method stub
-
+	
+	OWLOntology _ontology;
+	PrefixManager _prefix;
+	
+	Ontology(OWLOntology ontology, String id) {
+		_id = id;
+		_ontology = ontology;
 	}
 
 	@Override
@@ -89,53 +49,51 @@ public class Ontology implements IOntology {
 	
 	@Override
 	public Collection<IConcept> getConcepts() {
-		// TODO Auto-generated method stub
-		return null;
+		
+		ArrayList<IConcept> ret = new ArrayList<IConcept>();
+		for (OWLClass c : _ontology.getClassesInSignature()) {
+			ret.add(new Concept(c));
+		}
+ 		return ret;
 	}
 
 	@Override
 	public Collection<IProperty> getProperties() {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<IProperty> ret = new ArrayList<IProperty>();
+		for (OWLProperty<?,?>  p : _ontology.getDataPropertiesInSignature()) {
+			ret.add(new Property(p));
+		}
+		for (OWLProperty<?,?>  p : _ontology.getObjectPropertiesInSignature()) {
+			ret.add(new Property(p));
+		}
+		for (OWLAnnotationProperty  p : _ontology.getAnnotationPropertiesInSignature()) {
+			ret.add(new Property(p));
+		}
+
+ 		return ret;
 	}
 
-	/**
-	 * Create any concept that isn't available
-	 */
 	@Override
 	public IConcept getConcept(String ID) {
-		IConcept ret = _concepts.get(ID);
-		if (ret == null) {
-			_concepts.put(ID, ret = new Concept(_id, ID));
-		}
-		return ret;
+		return new Concept(
+				_ontology.getOWLOntologyManager().getOWLDataFactory().
+					getOWLClass(":" + ID, _prefix));
 	}
 
 
 	@Override
 	public IProperty getProperty(String ID) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public String getConceptSpace() {
-		// TODO Auto-generated method stub
-		return null;
+		return _id;
 	}
-
 
 	@Override
 	public String getURI() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-	@Override
-	public long getLastModificationDate() {
-		// TODO Auto-generated method stub
-		return 0;
+		return _ontology.getOWLOntologyManager().getOntologyDocumentIRI(_ontology).toString();
 	}
 
 	@Override
@@ -144,12 +102,37 @@ public class Ontology implements IOntology {
 		return false;
 	}
 
-
-
 	@Override
 	public void define(Collection<IAxiom> axioms) throws ThinklabException {
+		for (IAxiom axiom : axioms) {
+//		try {
+//			OWLDataFactory factory = _ontology.getOWLOntologyManager().getOWLDataFactory();
+//			if (axiom.is(IAxiom.CLASS_ASSERTION)) {
+//			
+//				URI uri = URI.create(getURI() + "#" + axiom.getArgument(0));
+//				OWLClass newcl = factory.getOWLClass(uri);
+//				_ontology.getOWLOntologyManager().addAxiom(_ontology, factory.getOWLDeclarationAxiom(newcl));
+//			
+//			} else if (axiom.is(IAxiom.SUBCLASS_OF)) {
+//
+//				IConcept p = findConcept(axiom.getArgument(1).toString());
+//				IConcept c = findConcept(axiom.getArgument(0).toString());
+//				OWLClass parent = (OWLClass) ((Concept)p).entity;
+//				manager.addAxiom(ont, factory.getOWLSubClassAxiom((OWLClass)((Concept)c).entity, parent));
+//			}
+//			
+//			/* TODO etc */
+//			
+//		} catch (OWLOntologyChangeException e) {
+//			throw new ThinklabInternalErrorException(e);
+//		}
+		}
+	}
+
+	@Override
+	public IMetadata getMetadata() {
 		// TODO Auto-generated method stub
-		
+		return null;
 	}
 
 }

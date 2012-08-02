@@ -7,17 +7,24 @@ import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IKnowledge;
 import org.integratedmodelling.thinklab.api.knowledge.IOntology;
 import org.integratedmodelling.thinklab.api.knowledge.IProperty;
+import org.integratedmodelling.thinklab.api.metadata.IMetadata;
+import org.semanticweb.owlapi.model.OWLEntity;
 
 public class Property implements IProperty {
 
 	String _id;
 	String _cs;
+	OWLEntity _property;
 	
 	public Property(String cs, String id) {
 		this._cs = cs;
 		this._id = id;
 	}
 	
+	public Property(OWLEntity p) {
+		_property = p;
+	}
+
 	@Override
 	public String getConceptSpace() {
 		return _cs;
@@ -28,29 +35,10 @@ public class Property implements IProperty {
 		return _id;
 	}
 
-
 	@Override
 	public boolean is(IKnowledge concept) {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	public boolean is(String semanticType) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void addAnnotation(String property, String value) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public String getAnnotation(String property) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
@@ -59,53 +47,6 @@ public class Property implements IProperty {
 		return null;
 	}
 
-	@Override
-	public String getLabel() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getDescription() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getLabel(String languageCode) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getDescription(String languageCode) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void addDescription(String desc) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addDescription(String desc, String language) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addLabel(String desc) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addLabel(String desc, String language) {
-		// TODO Auto-generated method stub
-
-	}
 
 	@Override
 	public IOntology getOntology() {
@@ -195,6 +136,12 @@ public class Property implements IProperty {
 	public boolean isFunctional() {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public IMetadata getMetadata() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

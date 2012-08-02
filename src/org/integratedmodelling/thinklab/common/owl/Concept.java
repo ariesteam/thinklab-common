@@ -9,12 +9,11 @@ import org.integratedmodelling.thinklab.api.knowledge.IKnowledge;
 import org.integratedmodelling.thinklab.api.knowledge.IOntology;
 import org.integratedmodelling.thinklab.api.knowledge.IProperty;
 import org.integratedmodelling.thinklab.api.knowledge.query.IQuery;
+import org.integratedmodelling.thinklab.api.metadata.IMetadata;
 import org.semanticweb.owlapi.model.OWLClass;
 
 /**
- * Just a proxy for a concept, can be used to create concepts that are automatically inserted in the
- * proxy knowledge manager. Ontologies can be extracted as lists and marshalled to a server for
- * actual knowledge creation.
+ * Just a wrapper for an OWL concept. Metadata are redirected to annotation properties.
  * 
  * @author Ferd
  *
@@ -31,6 +30,10 @@ public class Concept implements IConcept {
 		this._id = id;
 	}
 	
+	public Concept(OWLClass c) {
+		_owl = c;
+	}
+
 	@Override
 	public String getConceptSpace() {
 		return _cs;
@@ -48,75 +51,11 @@ public class Concept implements IConcept {
 	}
 
 	@Override
-	public boolean is(String semanticType) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void addAnnotation(String property, String value) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public String getAnnotation(String property) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public String getURI() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
-	public String getLabel() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getDescription() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getLabel(String languageCode) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getDescription(String languageCode) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void addDescription(String desc) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addDescription(String desc, String language) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addLabel(String desc) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addLabel(String desc, String language) {
-		// TODO Auto-generated method stub
-
-	}
 
 	@Override
 	public IOntology getOntology() {
@@ -211,6 +150,12 @@ public class Concept implements IConcept {
 
 	@Override
 	public Set<IConcept> getSemanticClosure() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public IMetadata getMetadata() {
 		// TODO Auto-generated method stub
 		return null;
 	}
