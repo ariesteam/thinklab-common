@@ -86,13 +86,7 @@ public class Ontology implements IOntology {
 	public IOntology getOntology() {
 		return this;
 	}
-
-	@Override
-	public String getUniqueObjectName(String prefix) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	
 	@Override
 	public Collection<IConcept> getConcepts() {
 		// TODO Auto-generated method stub
@@ -130,11 +124,6 @@ public class Ontology implements IOntology {
 		return null;
 	}
 
-	@Override
-	public void read(URL url) {
-		// TODO Auto-generated method stub
-
-	}
 
 	@Override
 	public String getURI() {
@@ -150,35 +139,12 @@ public class Ontology implements IOntology {
 	}
 
 	@Override
-	public boolean write(URI uri) throws ThinklabException {
+	public boolean write(String uri) throws ThinklabException {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	@Override
-	public boolean isAnonymous() {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
-	@Override
-	public IConcept createConcept(IList list) throws ThinklabException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public IConcept createConcept(String localName, IConcept[] parents)
-			throws ThinklabException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public IList asList() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public void define(Collection<IAxiom> axioms) throws ThinklabException {

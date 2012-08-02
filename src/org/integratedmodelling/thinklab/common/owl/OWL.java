@@ -13,6 +13,8 @@ import java.util.Map;
 import org.integratedmodelling.exceptions.ThinklabException;
 import org.integratedmodelling.exceptions.ThinklabUnsupportedOperationException;
 import org.integratedmodelling.lang.Axiom;
+import org.integratedmodelling.thinklab.api.knowledge.IConcept;
+import org.integratedmodelling.thinklab.api.knowledge.IProperty;
 import org.integratedmodelling.thinklab.api.lang.IModelParser;
 import org.integratedmodelling.thinklab.api.lang.IModelSerializer;
 import org.integratedmodelling.thinklab.api.lang.IResolver;
@@ -53,14 +55,17 @@ import org.semanticweb.owlapi.model.UnloadableImportException;
  * @author Ferd
  *
  */
-public class OwlParser implements IModelParser, IModelSerializer {
+public class OWL implements IModelParser, IModelSerializer {
 
 	HashMap<String, INamespace> _namespaces = new HashMap<String, INamespace>();
 	HashMap<String, INamespace> _resourceIndex = new HashMap<String, INamespace>();
 	HashMap<String, INamespace> _iriIndex = new HashMap<String, INamespace>();
 	HashSet<IRI> _seen = new HashSet<IRI>();
 	
-	OWLOntologyManager _manager = null;
+	/*
+	 * package-visible, never null.
+	 */
+	OWLOntologyManager manager = null;
 	
 	public static String getFileName(String s) {
 
@@ -79,16 +84,16 @@ public class OwlParser implements IModelParser, IModelSerializer {
 	 * This one will create a manager, so all knowledge loaded is local to this
 	 * parser.
 	 */
-	public OwlParser() {
-		_manager = OWLManager.createOWLOntologyManager();
+	public OWL() {
+		manager = OWLManager.createOWLOntologyManager();
 	}
 	
 	/**
 	 * Use this to read knowledge into an existing manager
 	 * @param manager
 	 */
-	public OwlParser(OWLOntologyManager manager) {
-		this._manager = manager;
+	public OWL(OWLOntologyManager manager) {
+		this.manager = manager;
 	}
 	
 	@Override
@@ -223,7 +228,7 @@ public class OwlParser implements IModelParser, IModelSerializer {
 			}
 			
 			input = resolver.openStream();
-			OWLOntology ontology = _manager.loadOntologyFromOntologyDocument(input);
+			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
 			input.close();
 			
 			/*
@@ -297,7 +302,7 @@ public class OwlParser implements IModelParser, IModelSerializer {
 			/*
 			 * OK, then wrap it and screw that.
 			 */
-			OWLOntology ontology = _manager.getOntology(e.getOntologyID().getOntologyIRI());
+			OWLOntology ontology = manager.getOntology(e.getOntologyID().getOntologyIRI());
 			if (ontology != null) {
 				ns = importOntology(ontology, resolver, resource, false);
 				_resourceIndex.put(resource, _namespaces.get(ns));
@@ -341,5 +346,29 @@ public class OwlParser implements IModelParser, IModelSerializer {
 		 */
 		
 	}
+
+	
+	/*
+	 * the three knowledge manager methods we implement, so we can serve as delegate to
+	 * a KM for these.
+	 */
+	
+	
+	public IConcept getConcept(String concept) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public IProperty getProperty(String concept) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	public IConcept getLeastGeneralCommonConcept(IConcept... cc) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }
