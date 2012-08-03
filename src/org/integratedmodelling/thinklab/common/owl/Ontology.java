@@ -1,11 +1,10 @@
 package org.integratedmodelling.thinklab.common.owl;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 
 import org.integratedmodelling.exceptions.ThinklabException;
-import org.integratedmodelling.exceptions.ThinklabInternalErrorException;
 import org.integratedmodelling.thinklab.api.knowledge.IAxiom;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IOntology;
@@ -14,9 +13,7 @@ import org.integratedmodelling.thinklab.api.lang.IList;
 import org.integratedmodelling.thinklab.api.metadata.IMetadata;
 import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyChangeException;
 import org.semanticweb.owlapi.model.OWLProperty;
 import org.semanticweb.owlapi.model.PrefixManager;
 
@@ -37,9 +34,33 @@ public class Ontology implements IOntology {
 	OWLOntology _ontology;
 	PrefixManager _prefix;
 	
+	HashSet<String> _conceptIDs  = new HashSet<String>();
+	HashSet<String> _propertyIDs = new HashSet<String>();
+	
 	Ontology(OWLOntology ontology, String id) {
 		_id = id;
 		_ontology = ontology;
+		scan();
+	}
+
+	/*
+	 * build a catalog of names, as there seems to be no way to quickly assess
+	 * if an ontology contains a named entity or not. This needs to be kept in 
+	 * sync with any changes, which is a pain.
+	 */
+	private void scan() {
+		for (OWLClass c : _ontology.getClassesInSignature()) {
+			_conceptIDs.add(c.getIRI().getFragment());
+		}
+		for (OWLProperty<?,?>  p : _ontology.getDataPropertiesInSignature()) {
+			_propertyIDs.add(p.getIRI().getFragment());
+		}
+		for (OWLProperty<?,?>  p : _ontology.getObjectPropertiesInSignature()) {
+			_propertyIDs.add(p.getIRI().getFragment());
+		}
+		for (OWLAnnotationProperty  p : _ontology.getAnnotationPropertiesInSignature()) {
+			_propertyIDs.add(p.getIRI().getFragment());
+		}		
 	}
 
 	@Override
@@ -75,9 +96,12 @@ public class Ontology implements IOntology {
 
 	@Override
 	public IConcept getConcept(String ID) {
-		return new Concept(
+		if (_conceptIDs.contains(ID)) {
+			return new Concept(
 				_ontology.getOWLOntologyManager().getOWLDataFactory().
 					getOWLClass(":" + ID, _prefix));
+		}
+		return null;
 	}
 
 

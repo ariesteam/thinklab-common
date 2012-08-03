@@ -13,9 +13,11 @@
 	<classpathentry kind="lib" path="lib/commons-lang-2.2.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/jgrapht.jar"/>
-	<classpathentry kind="lib" path="lib/owlapi-bin.jar"/>
+	<classpathentry kind="lib" path="lib/owlapi-bin.jar" sourcepath="C:/Users/Ferd/Desktop/eclipse/owlapi-src.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/thinklab-api"/>
 	<classpathentry kind="lib" path="lib/reflections-0.9.5.jar"/>
 	<classpathentry kind="lib" path="lib/mvel2-2.0.7.jar"/>
+	<classpathentry kind="lib" path="lib/pellet-core.jar"/>
+	<classpathentry kind="lib" path="lib/pellet-owlapiv3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -40,7 +40,7 @@ public class SemanticObject implements ISemanticObject<Object> {
 	@Override
 	public IConcept getDirectType() {
 		SemanticType st = new SemanticType(_list.first().toString());
-		return new Concept(st.getConceptSpace(), st.getLocalName());
+		return OWL.get().getConcept(st.toString());
 	}
 
 	@Override

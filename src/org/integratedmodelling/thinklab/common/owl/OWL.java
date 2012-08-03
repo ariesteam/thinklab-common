@@ -6,14 +6,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.integratedmodelling.exceptions.ThinklabException;
+import org.integratedmodelling.exceptions.ThinklabRuntimeException;
 import org.integratedmodelling.exceptions.ThinklabUnsupportedOperationException;
 import org.integratedmodelling.lang.Axiom;
+import org.integratedmodelling.lang.SemanticType;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
+import org.integratedmodelling.thinklab.api.knowledge.IOntology;
 import org.integratedmodelling.thinklab.api.knowledge.IProperty;
 import org.integratedmodelling.thinklab.api.lang.IModelParser;
 import org.integratedmodelling.thinklab.api.lang.IModelSerializer;
@@ -31,7 +38,6 @@ import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
-import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDataProperty;
 import org.semanticweb.owlapi.model.OWLDeclarationAxiom;
 import org.semanticweb.owlapi.model.OWLDisjointClassesAxiom;
@@ -40,11 +46,11 @@ import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyAlreadyExistsException;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
-import org.semanticweb.owlapi.model.OWLOntologyID;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLRestriction;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.model.UnloadableImportException;
+import org.semanticweb.owlapi.reasoner.OWLReasoner;
 
 
 /**
@@ -58,18 +64,53 @@ import org.semanticweb.owlapi.model.UnloadableImportException;
  *
  */
 public class OWL implements IModelParser, IModelSerializer {
-
-	
 	
 	HashMap<String, INamespace> _namespaces = new HashMap<String, INamespace>();
 	HashMap<String, INamespace> _resourceIndex = new HashMap<String, INamespace>();
 	HashMap<String, INamespace> _iriIndex = new HashMap<String, INamespace>();
+	HashMap<String, IOntology>  _ontologies = new HashMap<String, IOntology>();
 	HashSet<IRI> _seen = new HashSet<IRI>();
+	
+	/*
+	 * Singleton in this implementation, doesn't have to be - multiple managers would
+	 * equal multiple knowledge spaces, we should explore that in a later version.
+	 */
+	static private OWL _this = null;
+	
+	public static OWL get() {
+		if (_this == null) {
+			_this = new OWL();
+		}
+		return _this;
+	}
+	
+	IOntology requireOntology(String id, String prefix) {
+
+		if (_ontologies.get(id) != null) {
+			return _ontologies.get(id);
+		}
+		
+		IOntology ret = null;
+		try {
+			OWLOntology o = manager.createOntology(IRI.create(prefix + "/" + id));
+			ret = new Ontology(o, id);
+			_ontologies.put(id, ret);
+		} catch (OWLOntologyCreationException e) {
+			throw new ThinklabRuntimeException(e);
+		}
+		
+		return ret;
+	}
 	
 	/*
 	 * package-visible, never null.
 	 */
 	OWLOntologyManager manager = null;
+	
+	/*
+	 * package-visible, may be null.
+	 */
+	OWLReasoner reasoner = null;
 	
 	public static String getFileName(String s) {
 
@@ -86,9 +127,10 @@ public class OWL implements IModelParser, IModelSerializer {
 	
 	/**
 	 * This one will create a manager, so all knowledge loaded is local to this
-	 * parser.
+	 * parser. Using this object as a singleton will (for now) enforce this
+	 * behavior.
 	 */
-	public OWL() {
+	OWL() {
 		manager = OWLManager.createOWLOntologyManager();
 	}
 	
@@ -123,6 +165,10 @@ public class OWL implements IModelParser, IModelSerializer {
 			namespace = namespace.substring(0, namespace.lastIndexOf('.'));
 		}
 		
+		if (!_ontologies.containsKey(namespace)) {
+			_ontologies.put(namespace, new Ontology(ontology, namespace));
+		}
+		
 		/*
 		 * seen already?
 		 */
@@ -133,7 +179,10 @@ public class OWL implements IModelParser, IModelSerializer {
 		INamespaceDefinition ns = (INamespaceDefinition) resolver.newLanguageObject(INamespace.class);
 		ns.setId(namespace);
 		ns.setResourceUrl(resource);
-//		ns.initialize();
+
+		/*
+		 * TODO sync model objects with ontology
+		 */
 		
 		resolver.onNamespaceDeclared();
 		
@@ -246,9 +295,6 @@ public class OWL implements IModelParser, IModelSerializer {
 			 */
 			_resourceIndex.put(resource, _namespaces.get(ns));
 			
-			/*
-			 * TODO proper error handling
-			 */
 		} catch (OWLOntologyCreationIOException e) {
 			// IOExceptions during loading get wrapped in an
 			// OWLOntologyCreationIOException
@@ -333,8 +379,11 @@ public class OWL implements IModelParser, IModelSerializer {
 		INamespace nns = _namespaces.get(ns);
 		((INamespaceDefinition)nns).setResourceUrl(resource);
 		((INamespaceDefinition)nns).setId(namespace);
-//		((INamespaceDefinition)nns).initialize();
 
+		/*
+		 * TODO create concept objects in NS?
+		 */
+		
 		return _namespaces.get(ns);
 	}
 
@@ -359,20 +408,56 @@ public class OWL implements IModelParser, IModelSerializer {
 	
 	
 	public IConcept getConcept(String concept) {
-		// TODO Auto-generated method stub
+
+		if (SemanticType.validate(concept)) {
+			SemanticType st = new SemanticType(concept);
+			IOntology o = _ontologies.get(st.getConceptSpace());
+			return o.getConcept(st.getLocalName());
+		}
 		return null;
 	}
 
 	public IProperty getProperty(String concept) {
-		// TODO Auto-generated method stub
+
+		if (SemanticType.validate(concept)) {
+			SemanticType st = new SemanticType(concept);
+			IOntology o = _ontologies.get(st.getConceptSpace());
+			return o.getProperty(st.getLocalName());
+		}
 		return null;
 	}
 
+	public IConcept getLeastGeneralCommonConcept(Collection<IConcept> cc) {
+		
+		IConcept ret = null;
+		Iterator<IConcept> ii = cc.iterator();
 
-	public IConcept getLeastGeneralCommonConcept(IConcept... cc) {
-		// TODO Auto-generated method stub
-		return null;
+		if (ii.hasNext()) {		
+			
+		  ret = ii.next();
+		  
+		  if (ret != null)
+			while (ii.hasNext()) {
+		      ret = ret.getLeastGeneralCommonConcept(ii.next());
+		      if (ret == null)
+		    	  break;
+		    }
+		}
+		
+		return ret;
 	}
 
+	/**
+	 * Return the ontology for the given namespace ID (short name).
+	 * @param _cs
+	 * @return
+	 */
+	public IOntology getOntology(String ns) {
+		return _ontologies.get(ns);
+	}
+
+	public IConcept getRootConcept() {
+		return new Concept(manager.getOWLDataFactory().getOWLThing());
+	}
 
 }
