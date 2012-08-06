@@ -44,12 +44,14 @@ public class Concept implements IConcept {
 
 	String _id;
 	String _cs;
-	
+	OWL _manager;
 	OWLClass _owl;
 		
-	Concept(OWLClass c) {
+	Concept(OWLClass c, OWL manager) {
 		_owl = c;
 		_id = c.getIRI().getFragment();
+		_cs = OWL.getNamespaceFromIRI(_owl.getIRI());
+		_manager = manager;
 	}
 
 	@Override
@@ -73,8 +75,8 @@ public class Concept implements IConcept {
 		if (cc.equals(this))
 			return true;
 		
-		if (OWL.get().reasoner != null) {
-			return OWL.get().reasoner.getSubClasses(_owl, false).containsEntity(cc._owl);
+		if (_manager.reasoner != null) {
+			return _manager.reasoner.getSubClasses(_owl, false).containsEntity(cc._owl);
 		}
 	
 		Collection<IConcept> collection = getAllParents();
@@ -90,7 +92,7 @@ public class Concept implements IConcept {
 
 	@Override
 	public IOntology getOntology() {
-		return OWL.get().getOntology(_cs);
+		return _manager.getOntology(_cs);
 	}
 
 	@Override
@@ -98,18 +100,18 @@ public class Concept implements IConcept {
 
 		Set<IConcept> concepts = new HashSet<IConcept>();
 		synchronized (_owl) {
-			Set<OWLClassExpression> set = _owl.getSuperClasses(OWL.get().manager.getOntologies());
+			Set<OWLClassExpression> set = _owl.getSuperClasses(_manager.manager.getOntologies());
 		
 			for (OWLClassExpression s : set) {
 				if (!(s.isAnonymous() || s.isOWLNothing()))
-					concepts.add(new Concept(s.asOWLClass()));
+					concepts.add(new Concept(s.asOWLClass(), _manager));
 			}
 		}
 
 		// OWLAPI doesn't do this - only add owl:Thing if this is its direct subclass, i.e. has no 
 		// parents in OWLAPI.
-		if (concepts.isEmpty() && !OWL.get().getRootConcept().equals(this))
-			concepts.add(OWL.get().getRootConcept());
+		if (concepts.isEmpty() && !_manager.getRootConcept().equals(this))
+			concepts.add(_manager.getRootConcept());
 		
 		return concepts;
 		
@@ -119,10 +121,10 @@ public class Concept implements IConcept {
 	public Collection<IConcept> getAllParents() {
 		Set<IConcept> concepts = new HashSet<IConcept>();
 		
-		if (OWL.get().reasoner != null) {
-			NodeSet<OWLClass> parents = OWL.get().reasoner.getSuperClasses(_owl, false);
+		if (_manager.reasoner != null) {
+			NodeSet<OWLClass> parents = _manager.reasoner.getSuperClasses(_owl, false);
 			for (OWLClass cls : parents.getFlattened()) {
-				concepts.add(new Concept(cls));
+				concepts.add(new Concept(cls, _manager));
 			}
 				
 			return concepts;
@@ -136,7 +138,7 @@ public class Concept implements IConcept {
 			}
 		}
 
-		concepts.add(OWL.get().getRootConcept());
+		concepts.add(_manager.getRootConcept());
 
 		return concepts;
 
@@ -147,14 +149,14 @@ public class Concept implements IConcept {
 		
 		Set<IConcept> concepts = new HashSet<IConcept>();
 		synchronized (_owl) {
-			Set<OWLClassExpression> set = _owl.getSubClasses(OWL.get().manager.getOntologies());
+			Set<OWLClassExpression> set = _owl.getSubClasses(_manager.manager.getOntologies());
 			
 			for (OWLClassExpression s : set) {
 				if (!(s.isAnonymous() || s.isOWLNothing() || s.isOWLThing()))
-					concepts.add(new Concept(s.asOWLClass()));
+					concepts.add(new Concept(s.asOWLClass(), _manager));
 			}
 			if (set.isEmpty() && ((OWLClass)_owl).isOWLThing()) {
-				for (IOntology onto : OWL.get()._ontologies.values()) {
+				for (IOntology onto : _manager._ontologies.values()) {
 					concepts.addAll(onto.getConcepts());
 				}
 			}
@@ -185,14 +187,14 @@ public class Concept implements IConcept {
 		Set<IProperty> properties = new HashSet<IProperty>();
 			synchronized (ontology) {
 				for (OWLObjectProperty op : ontology.getObjectPropertiesInSignature(true)) {
-					Set<OWLClassExpression> rang = op.getDomains(OWL.get().manager.getOntologies());
+					Set<OWLClassExpression> rang = op.getDomains(_manager.manager.getOntologies());
 					if (rang.contains(_owl))
-						properties.add(new Property(op));
+						properties.add(new Property(op, _manager));
 				}
 				for (OWLDataProperty op : ontology.getDataPropertiesInSignature(true)) {
-					Set<OWLClassExpression> rang = op.getDomains(OWL.get().manager.getOntologies());
+					Set<OWLClassExpression> rang = op.getDomains(_manager.manager.getOntologies());
 					if (rang.contains(_owl))
-						properties.add(new Property(op));
+						properties.add(new Property(op, _manager));
 				}
 			}
 		return properties;
@@ -300,12 +302,12 @@ public class Concept implements IConcept {
 	@Override
 	public Set<IConcept> getSemanticClosure() {
 
-		if (OWL.get().reasoner != null) {
+		if (_manager.reasoner != null) {
 			
 			HashSet<IConcept> ret = new HashSet<IConcept>();
-			NodeSet<OWLClass> cset = OWL.get().reasoner.getSubClasses(_owl, false);
+			NodeSet<OWLClass> cset = _manager.reasoner.getSubClasses(_owl, false);
 			for (OWLClass cl : cset.getFlattened()) {
-				ret.add(new Concept(cl));
+				ret.add(new Concept(cl, _manager));
 			}
 			return ret;
 		}
@@ -333,7 +335,7 @@ public class Concept implements IConcept {
 	}
 	
 	public RestrictionVisitor getRestrictions() {
-		RestrictionVisitor visitor = new RestrictionVisitor(OWL.get().manager.getOntologies());
+		RestrictionVisitor visitor = new RestrictionVisitor(_manager.manager.getOntologies());
 		for (OWLSubClassOfAxiom ax : ((Ontology)(getOntology()))._ontology.getSubClassAxiomsForSubClass(_owl)) {
 			ax.getSuperClass().accept((OWLClassExpressionVisitor)visitor);
 		}
@@ -345,9 +347,20 @@ public class Concept implements IConcept {
 		
 		for (OWLAnnotation annotation : _owl.getAnnotations(((Ontology)getOntology())._ontology)) {
 			OWLLiteral l = (OWLLiteral) annotation.getValue();
-			ret.put(new Property(annotation.getProperty()), l.getLiteral());
+			ret.put(new Property(annotation.getProperty(), _manager), l.getLiteral());
 		}
 		return ret;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		return  obj instanceof Concept ? _owl.equals(((Concept)obj)._owl) : false;
+	}
+
+	@Override
+	public int hashCode() {
+		return _owl.hashCode();
+	}
+
 
 }

@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.integratedmodelling.collections.Pair;
 import org.integratedmodelling.exceptions.ThinklabCircularDependencyException;
-import org.integratedmodelling.lang.SemanticType;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IProperty;
 import org.integratedmodelling.thinklab.api.knowledge.ISemanticObject;
@@ -39,8 +38,9 @@ public class SemanticObject implements ISemanticObject<Object> {
 
 	@Override
 	public IConcept getDirectType() {
-		SemanticType st = new SemanticType(_list.first().toString());
-		return OWL.get().getConcept(st.toString());
+//		SemanticType st = new SemanticType(_list.first().toString());
+//		return OWL.get().getConcept(st.toString());
+		return null;
 	}
 
 	@Override

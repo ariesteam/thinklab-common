@@ -1,12 +1,11 @@
 package org.integratedmodelling.thinklab.common.owl;
 
-import java.util.HashMap;
+import java.io.File;
+import java.util.Arrays;
 
 import org.integratedmodelling.exceptions.ThinklabException;
-import org.integratedmodelling.lang.SemanticType;
 import org.integratedmodelling.thinklab.api.factories.IKnowledgeManager;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
-import org.integratedmodelling.thinklab.api.knowledge.IOntology;
 import org.integratedmodelling.thinklab.api.knowledge.IProperty;
 import org.integratedmodelling.thinklab.api.knowledge.ISemanticObject;
 import org.integratedmodelling.thinklab.api.knowledge.kbox.IKbox;
@@ -28,43 +27,33 @@ public class KnowledgeManager implements IKnowledgeManager {
 
 	private static KnowledgeManager _this;
 	
-	HashMap<String, IOntology> _ontologies = 
-			new HashMap<String, IOntology>();
-
+	private OWL _manager = new OWL();
+	
 	public static IKnowledgeManager get() {
 		if (_this == null) {
 			_this = new KnowledgeManager();
 		}
 		return _this;
 	}
-	
-	@Override
-	public IProperty getProperty(String prop) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
-	public IOntology requireOntology(String s) {
-		
-		IOntology ret = _ontologies.get(s);
-		// TODO
-		
-		return ret;
-	}
+	public KnowledgeManager()  {
+	}	
 	
 	@Override
-	public IConcept getConcept(String prop) {
-		SemanticType st = new SemanticType(prop);
-		IOntology ont = requireOntology(st.getConceptSpace());
-		return ont.getConcept(st.getLocalName());
+	public IConcept getConcept(String concept) {
+		return _manager.getConcept(concept);
 	}
 
 	@Override
 	public IConcept getLeastGeneralCommonConcept(IConcept... cc) {
-		// TODO Auto-generated method stub
-		return null;
+		return _manager.getLeastGeneralCommonConcept(Arrays.asList(cc));
 	}
 	
+	@Override
+	public IProperty getProperty(String prop) {
+		return _manager.getProperty(prop);
+	}
+
 	@Override
 	public void dropKbox(String uri) throws ThinklabException {
 		// TODO Auto-generated method stub
@@ -115,8 +104,11 @@ public class KnowledgeManager implements IKnowledgeManager {
 
 	@Override
 	public IConcept getXSDMapping(String string) {
-		// TODO Auto-generated method stub
-		return null;
+		return _manager.getXSDMapping(string);
 	}
 
+	
+	public void loadKnowledge(File directory) throws ThinklabException {
+		_manager.load(directory);
+	}
 }

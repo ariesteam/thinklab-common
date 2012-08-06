@@ -33,13 +33,14 @@ public class Ontology implements IOntology {
 	
 	OWLOntology _ontology;
 	PrefixManager _prefix;
-	
+	OWL _manager;
 	HashSet<String> _conceptIDs  = new HashSet<String>();
 	HashSet<String> _propertyIDs = new HashSet<String>();
 	
-	Ontology(OWLOntology ontology, String id) {
+	Ontology(OWLOntology ontology, String id, OWL manager) {
 		_id = id;
 		_ontology = ontology;
+		_manager = manager;
 		scan();
 	}
 
@@ -73,7 +74,7 @@ public class Ontology implements IOntology {
 		
 		ArrayList<IConcept> ret = new ArrayList<IConcept>();
 		for (OWLClass c : _ontology.getClassesInSignature()) {
-			ret.add(new Concept(c));
+			ret.add(new Concept(c, _manager));
 		}
  		return ret;
 	}
@@ -82,13 +83,13 @@ public class Ontology implements IOntology {
 	public Collection<IProperty> getProperties() {
 		ArrayList<IProperty> ret = new ArrayList<IProperty>();
 		for (OWLProperty<?,?>  p : _ontology.getDataPropertiesInSignature()) {
-			ret.add(new Property(p));
+			ret.add(new Property(p, _manager));
 		}
 		for (OWLProperty<?,?>  p : _ontology.getObjectPropertiesInSignature()) {
-			ret.add(new Property(p));
+			ret.add(new Property(p, _manager));
 		}
 		for (OWLAnnotationProperty  p : _ontology.getAnnotationPropertiesInSignature()) {
-			ret.add(new Property(p));
+			ret.add(new Property(p, _manager));
 		}
 
  		return ret;
@@ -99,7 +100,7 @@ public class Ontology implements IOntology {
 		if (_conceptIDs.contains(ID)) {
 			return new Concept(
 				_ontology.getOWLOntologyManager().getOWLDataFactory().
-					getOWLClass(":" + ID, _prefix));
+					getOWLClass(":" + ID, _prefix), _manager);
 		}
 		return null;
 	}

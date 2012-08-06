@@ -1,20 +1,21 @@
 package org.integratedmodelling.thinklab.common.owl;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.integratedmodelling.exceptions.ThinklabException;
+import org.integratedmodelling.exceptions.ThinklabIOException;
 import org.integratedmodelling.exceptions.ThinklabRuntimeException;
 import org.integratedmodelling.exceptions.ThinklabUnsupportedOperationException;
 import org.integratedmodelling.lang.Axiom;
@@ -27,6 +28,14 @@ import org.integratedmodelling.thinklab.api.lang.IModelSerializer;
 import org.integratedmodelling.thinklab.api.lang.IResolver;
 import org.integratedmodelling.thinklab.api.modelling.INamespace;
 import org.integratedmodelling.thinklab.api.modelling.parsing.INamespaceDefinition;
+import org.integratedmodelling.thinklab.api.project.IProject;
+import org.integratedmodelling.thinklab.common.utils.CamelCase;
+import org.integratedmodelling.thinklab.common.utils.CopyURL;
+import org.integratedmodelling.thinklab.common.utils.MiscUtilities;
+import org.reflections.Reflections;
+import org.reflections.scanners.ResourcesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.io.OWLOntologyCreationIOException;
 import org.semanticweb.owlapi.io.OWLParser;
@@ -51,6 +60,7 @@ import org.semanticweb.owlapi.model.OWLRestriction;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.model.UnloadableImportException;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
+import org.semanticweb.owlapi.util.AutoIRIMapper;
 
 
 /**
@@ -75,14 +85,14 @@ public class OWL implements IModelParser, IModelSerializer {
 	 * Singleton in this implementation, doesn't have to be - multiple managers would
 	 * equal multiple knowledge spaces, we should explore that in a later version.
 	 */
-	static private OWL _this = null;
-	
-	public static OWL get() {
-		if (_this == null) {
-			_this = new OWL();
-		}
-		return _this;
-	}
+//	static private OWL _this = null;
+//	
+//	public static OWL get() {
+//		if (_this == null) {
+//			_this = new OWL();
+//		}
+//		return _this;
+//	}
 	
 	IOntology requireOntology(String id, String prefix) {
 
@@ -93,7 +103,7 @@ public class OWL implements IModelParser, IModelSerializer {
 		IOntology ret = null;
 		try {
 			OWLOntology o = manager.createOntology(IRI.create(prefix + "/" + id));
-			ret = new Ontology(o, id);
+			ret = new Ontology(o, id, this);
 			_ontologies.put(id, ret);
 		} catch (OWLOntologyCreationException e) {
 			throw new ThinklabRuntimeException(e);
@@ -166,7 +176,7 @@ public class OWL implements IModelParser, IModelSerializer {
 		}
 		
 		if (!_ontologies.containsKey(namespace)) {
-			_ontologies.put(namespace, new Ontology(ontology, namespace));
+			_ontologies.put(namespace, new Ontology(ontology, namespace, this));
 		}
 		
 		/*
@@ -288,7 +298,6 @@ public class OWL implements IModelParser, IModelSerializer {
 			 * import ontology and all its imports. Return namespace ID.
 			 */
 			ns = importOntology(ontology, resolver, resource, false);
-			
 			
 			/*
 			 * do not load this again, it's in the manager.
@@ -457,7 +466,113 @@ public class OWL implements IModelParser, IModelSerializer {
 	}
 
 	public IConcept getRootConcept() {
-		return new Concept(manager.getOWLDataFactory().getOWLThing());
+		return new Concept(manager.getOWLDataFactory().getOWLThing(), this);
 	}
 
+	public static String getNamespaceFromIRI(IRI iri) {
+
+		String ret = iri.getStart();
+		
+		int sl = ret.lastIndexOf(File.separator);
+		if (sl < 0)
+			sl = ret.lastIndexOf('/');
+		if (sl > 0)
+			ret = ret.substring(sl+1);
+		
+		return ret;
+	}
+	
+	public void extractCoreOntologies(File dir) throws ThinklabIOException {
+		
+		dir.mkdirs();
+		
+		Reflections reflections = new Reflections(new ConfigurationBuilder()
+      	    .setUrls(ClasspathHelper.forPackage("thinklab.common.knowledge"))
+      	    .setScanners(new ResourcesScanner()));
+		
+		for (String of : reflections.getResources(Pattern.compile(".*\\.owl"))) {
+
+			/*
+			 * remove knowledge/ prefix for output
+			 */
+			String oof = of;
+			if (oof.startsWith("knowledge/"))
+				oof = oof.substring("knowledge/".length());
+			
+			File output = new File(dir + File.separator + oof);
+			new File(MiscUtilities.getFilePath(output.toString())).mkdirs();
+			CopyURL.copy(this.getClass().getClassLoader().getResource(of), output);
+		}
+	}
+
+	/**
+	 * Load OWL files from given directory and in its
+	 * subdirectories, using a prefix mapper to resolve URLs internally and
+	 * deriving ontology names from the relative paths.
+	 *
+	 * This does not use a resolver and does not create namespaces for now. It's only meant
+	 * for core knowledge not seen by users.
+	 * 
+	 * @param kdir
+	 * @throws ThinklabIOException 
+	 */
+	public void load(File kdir) throws ThinklabException {
+
+		AutoIRIMapper imap = new AutoIRIMapper(kdir, true);
+		manager.addIRIMapper(imap);
+
+		for (File fl : kdir.listFiles()) {
+			loadInternal(fl, "");
+		}
+	}
+	
+	private void loadInternal(File f, String path) throws ThinklabException {
+
+		String pth = 
+				path == null ? 
+					"" : 
+					(path + (path.isEmpty() ? "" : ".") + CamelCase.toLowerCase(MiscUtilities.getFileBaseName(f.toString()), '-'));
+						
+		if (f. isDirectory()) {
+
+			for (File fl : f.listFiles()) {
+				loadInternal(fl, pth);
+			}
+			
+		} else if (MiscUtilities.getFileExtension(f.toString()).equals("owl")) {
+
+			InputStream input;
+			
+			try {
+				input = new FileInputStream(f);
+				OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
+				input.close();
+				_ontologies.put(pth, new Ontology(ontology, pth, this));
+				
+			} catch (OWLOntologyAlreadyExistsException e) {
+
+				/*
+				 * already imported- wrap it and use it as is.
+				 */
+				OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
+				if (ont != null) {
+					_ontologies.put(pth, new Ontology(ont, pth, this));
+				}
+				
+			} catch (Exception e) {
+				
+				/*
+				 * everything else is probably an error
+				 */
+				throw new ThinklabIOException(e);
+			}
+		}
+	}
+
+
+	public IConcept getXSDMapping(String string) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 }
