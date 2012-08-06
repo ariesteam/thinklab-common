@@ -3,6 +3,7 @@ package org.integratedmodelling.thinklab.common.owl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 import org.integratedmodelling.exceptions.ThinklabException;
 import org.integratedmodelling.exceptions.ThinklabInternalErrorException;
@@ -40,6 +41,13 @@ public class Ontology implements IOntology {
 	HashSet<String> _conceptIDs  = new HashSet<String>();
 	HashSet<String> _propertyIDs = new HashSet<String>();
 	
+	/*
+	 * what a pain
+	 */
+	HashSet<String> _opropertyIDs = new HashSet<String>();
+	HashSet<String> _dpropertyIDs = new HashSet<String>();
+	HashSet<String> _apropertyIDs = new HashSet<String>();
+	
 	Ontology(OWLOntology ontology, String id, OWL manager) {
 		_id = id;
 		_ontology = ontology;
@@ -58,12 +66,15 @@ public class Ontology implements IOntology {
 			_conceptIDs.add(c.getIRI().getFragment());
 		}
 		for (OWLProperty<?,?>  p : _ontology.getDataPropertiesInSignature()) {
+			_dpropertyIDs.add(p.getIRI().getFragment());			
 			_propertyIDs.add(p.getIRI().getFragment());
 		}
 		for (OWLProperty<?,?>  p : _ontology.getObjectPropertiesInSignature()) {
+			_opropertyIDs.add(p.getIRI().getFragment());
 			_propertyIDs.add(p.getIRI().getFragment());
 		}
 		for (OWLAnnotationProperty  p : _ontology.getAnnotationPropertiesInSignature()) {
+			_apropertyIDs.add(p.getIRI().getFragment());
 			_propertyIDs.add(p.getIRI().getFragment());
 		}		
 	}
@@ -99,6 +110,36 @@ public class Ontology implements IOntology {
  		return ret;
 	}
 
+	/**
+	 * Special purpose function: return all concepts that have no parents that belong to
+	 * this ontology - making them "top-level" in it. Optionally, just return those whose
+	 * ONLY parent is owl:Thing.
+	 * 
+	 * @param noParent if true, only return those concept that derive directly and 
+	 *        exclusively from owl:Thing.
+	 * @return
+	 */
+	public List<IConcept> getTopConcepts(boolean noParent) {
+		ArrayList<IConcept> ret = new ArrayList<IConcept>();
+		for (IConcept c : getConcepts()) {
+			Collection<IConcept> parents = c.getParents();
+			boolean ok = true;
+			if (noParent) {
+				ok = parents.size() <= 1;
+			} else {
+				for (IConcept cc : parents) {
+					if (cc.getConceptSpace().equals(_id)) {
+						ok = false;
+						break;
+					}
+				}
+			}
+			if (ok)
+				ret.add(c);
+		}
+		return ret;
+	}
+	
 	@Override
 	public IConcept getConcept(String ID) {
 		if (_conceptIDs.contains(ID)) {
@@ -108,17 +149,25 @@ public class Ontology implements IOntology {
 		}
 		return null;
 	}
-
-
+	
 	@Override
 	public IProperty getProperty(String ID) {
+		if (_opropertyIDs.contains(ID)) {
+			return new Property(_ontology.getOWLOntologyManager().getOWLDataFactory().
+				getOWLObjectProperty(IRI.create(_prefix + "#" + ID)), _manager);
+		}
+		if (_dpropertyIDs.contains(ID)) {
+			return new Property(_ontology.getOWLOntologyManager().getOWLDataFactory().
+				getOWLDataProperty(IRI.create(_prefix + "#" + ID)), _manager);
+		}
+		if (_apropertyIDs.contains(ID)) {
+			return new Property(_ontology.getOWLOntologyManager().getOWLDataFactory().
+				getOWLAnnotationProperty(IRI.create(_prefix + "#" + ID)), _manager);
+		}
 		return null;
+
 	}
 
-	@Override
-	public String getConceptSpace() {
-		return _id;
-	}
 
 	@Override
 	public String getURI() {
@@ -133,6 +182,12 @@ public class Ontology implements IOntology {
 
 	@Override
 	public void define(Collection<IAxiom> axioms) throws ThinklabException {
+		
+		/*
+		 * ACHTUNG remember to add IDs to appropriate catalogs as classes and property assertions
+		 * are encountered. This can be called incrementally, so better not to call scan() every time.
+		 */
+		
 		for (IAxiom axiom : axioms) {
 			try {
 				OWLDataFactory factory = _ontology.getOWLOntologyManager().getOWLDataFactory();
@@ -143,7 +198,7 @@ public class Ontology implements IOntology {
 				} else if (axiom.is(IAxiom.SUBCLASS_OF)) {
 					OWLClass p = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(1)));
 					OWLClass c = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(0)));
-					_manager.manager.addAxiom(_ontology, factory.getOWLSubClassOfAxiom(c, p));
+					_manager.manager.addAxiom(_ontology, factory.getOWLSubClassOfAxiom(p, c));
 				}
 			
 				/* TODO etc */
@@ -158,6 +213,21 @@ public class Ontology implements IOntology {
 	public IMetadata getMetadata() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public String getConceptSpace() {
+		return _id;
+	}
+
+	@Override
+	public int getConceptCount() {
+		return _conceptIDs.size();
+	}
+
+	@Override
+	public int getPropertyCount() {
+		return _propertyIDs.size();
 	}
 
 }

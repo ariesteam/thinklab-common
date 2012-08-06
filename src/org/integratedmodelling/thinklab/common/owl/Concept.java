@@ -54,7 +54,9 @@ public class Concept implements IConcept {
 	}
 
 	@Override
-	public String getConceptSpace() {		
+	public String getConceptSpace() {	
+		if (_owl.isTopEntity())
+			return "owl";
 		return _manager.getConceptSpace(StringUtils.chop(_owl.getIRI().getStart()));
 	}
 
@@ -113,7 +115,6 @@ public class Concept implements IConcept {
 			concepts.add(_manager.getRootConcept());
 		
 		return concepts;
-		
 	}
 
 	@Override
