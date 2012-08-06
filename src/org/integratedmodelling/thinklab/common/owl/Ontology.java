@@ -5,17 +5,20 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import org.integratedmodelling.exceptions.ThinklabException;
+import org.integratedmodelling.exceptions.ThinklabInternalErrorException;
 import org.integratedmodelling.thinklab.api.knowledge.IAxiom;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IOntology;
 import org.integratedmodelling.thinklab.api.knowledge.IProperty;
 import org.integratedmodelling.thinklab.api.lang.IList;
 import org.integratedmodelling.thinklab.api.metadata.IMetadata;
+import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyChangeException;
 import org.semanticweb.owlapi.model.OWLProperty;
-import org.semanticweb.owlapi.model.PrefixManager;
 
 /**
  * A proxy for an ontology. Holds a list of concepts and a list of axioms. Can be
@@ -32,7 +35,7 @@ public class Ontology implements IOntology {
 	ArrayList<IList> _axioms = new ArrayList<IList>();
 	
 	OWLOntology _ontology;
-	PrefixManager _prefix;
+	String _prefix;
 	OWL _manager;
 	HashSet<String> _conceptIDs  = new HashSet<String>();
 	HashSet<String> _propertyIDs = new HashSet<String>();
@@ -41,6 +44,7 @@ public class Ontology implements IOntology {
 		_id = id;
 		_ontology = ontology;
 		_manager = manager;
+		_prefix = _manager.manager.getOntologyDocumentIRI(ontology).toString();
 		scan();
 	}
 
@@ -100,7 +104,7 @@ public class Ontology implements IOntology {
 		if (_conceptIDs.contains(ID)) {
 			return new Concept(
 				_ontology.getOWLOntologyManager().getOWLDataFactory().
-					getOWLClass(":" + ID, _prefix), _manager);
+					getOWLClass(IRI.create(_prefix + "#" + ID)), _manager);
 		}
 		return null;
 	}
@@ -130,27 +134,23 @@ public class Ontology implements IOntology {
 	@Override
 	public void define(Collection<IAxiom> axioms) throws ThinklabException {
 		for (IAxiom axiom : axioms) {
-//		try {
-//			OWLDataFactory factory = _ontology.getOWLOntologyManager().getOWLDataFactory();
-//			if (axiom.is(IAxiom.CLASS_ASSERTION)) {
-//			
-//				URI uri = URI.create(getURI() + "#" + axiom.getArgument(0));
-//				OWLClass newcl = factory.getOWLClass(uri);
-//				_ontology.getOWLOntologyManager().addAxiom(_ontology, factory.getOWLDeclarationAxiom(newcl));
-//			
-//			} else if (axiom.is(IAxiom.SUBCLASS_OF)) {
-//
-//				IConcept p = findConcept(axiom.getArgument(1).toString());
-//				IConcept c = findConcept(axiom.getArgument(0).toString());
-//				OWLClass parent = (OWLClass) ((Concept)p).entity;
-//				manager.addAxiom(ont, factory.getOWLSubClassAxiom((OWLClass)((Concept)c).entity, parent));
-//			}
-//			
-//			/* TODO etc */
-//			
-//		} catch (OWLOntologyChangeException e) {
-//			throw new ThinklabInternalErrorException(e);
-//		}
+			try {
+				OWLDataFactory factory = _ontology.getOWLOntologyManager().getOWLDataFactory();
+				if (axiom.is(IAxiom.CLASS_ASSERTION)) {
+					OWLClass newcl = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(0)));
+					_ontology.getOWLOntologyManager().addAxiom(_ontology, factory.getOWLDeclarationAxiom(newcl));
+					_conceptIDs.add(axiom.getArgument(0).toString());
+				} else if (axiom.is(IAxiom.SUBCLASS_OF)) {
+					OWLClass p = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(1)));
+					OWLClass c = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(0)));
+					_manager.manager.addAxiom(_ontology, factory.getOWLSubClassOfAxiom(c, p));
+				}
+			
+				/* TODO etc */
+			
+			} catch (OWLOntologyChangeException e) {
+				throw new ThinklabInternalErrorException(e);
+			}
 		}
 	}
 

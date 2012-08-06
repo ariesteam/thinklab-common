@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.integratedmodelling.exceptions.ThinklabException;
 import org.integratedmodelling.exceptions.ThinklabRuntimeException;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
@@ -43,20 +44,18 @@ import org.semanticweb.owlapi.reasoner.NodeSet;
 public class Concept implements IConcept {
 
 	String _id;
-	String _cs;
 	OWL _manager;
 	OWLClass _owl;
-		
+	
 	Concept(OWLClass c, OWL manager) {
 		_owl = c;
 		_id = c.getIRI().getFragment();
-		_cs = OWL.getNamespaceFromIRI(_owl.getIRI());
 		_manager = manager;
 	}
 
 	@Override
-	public String getConceptSpace() {
-		return _cs;
+	public String getConceptSpace() {		
+		return _manager.getConceptSpace(StringUtils.chop(_owl.getIRI().getStart()));
 	}
 
 	@Override
@@ -92,7 +91,7 @@ public class Concept implements IConcept {
 
 	@Override
 	public IOntology getOntology() {
-		return _manager.getOntology(_cs);
+		return _manager.getOntology(getConceptSpace());
 	}
 
 	@Override
@@ -362,5 +361,8 @@ public class Concept implements IConcept {
 		return _owl.hashCode();
 	}
 
-
+	@Override
+	public String toString() {
+		return getConceptSpace() + ":" + _id;
+	}
 }

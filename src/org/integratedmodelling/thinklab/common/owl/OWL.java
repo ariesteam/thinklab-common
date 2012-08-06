@@ -9,7 +9,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -28,7 +27,6 @@ import org.integratedmodelling.thinklab.api.lang.IModelSerializer;
 import org.integratedmodelling.thinklab.api.lang.IResolver;
 import org.integratedmodelling.thinklab.api.modelling.INamespace;
 import org.integratedmodelling.thinklab.api.modelling.parsing.INamespaceDefinition;
-import org.integratedmodelling.thinklab.api.project.IProject;
 import org.integratedmodelling.thinklab.common.utils.CamelCase;
 import org.integratedmodelling.thinklab.common.utils.CopyURL;
 import org.integratedmodelling.thinklab.common.utils.MiscUtilities;
@@ -75,24 +73,10 @@ import org.semanticweb.owlapi.util.AutoIRIMapper;
  */
 public class OWL implements IModelParser, IModelSerializer {
 	
-	HashMap<String, INamespace> _namespaces = new HashMap<String, INamespace>();
-	HashMap<String, INamespace> _resourceIndex = new HashMap<String, INamespace>();
-	HashMap<String, INamespace> _iriIndex = new HashMap<String, INamespace>();
+	private HashMap<String, INamespace> _namespaces = new HashMap<String, INamespace>();
+	private HashMap<String, INamespace> _resourceIndex = new HashMap<String, INamespace>();
+	HashMap<String, String> _csIndex = new HashMap<String, String>();
 	HashMap<String, IOntology>  _ontologies = new HashMap<String, IOntology>();
-	HashSet<IRI> _seen = new HashSet<IRI>();
-	
-	/*
-	 * Singleton in this implementation, doesn't have to be - multiple managers would
-	 * equal multiple knowledge spaces, we should explore that in a later version.
-	 */
-//	static private OWL _this = null;
-//	
-//	public static OWL get() {
-//		if (_this == null) {
-//			_this = new OWL();
-//		}
-//		return _this;
-//	}
 	
 	IOntology requireOntology(String id, String prefix) {
 
@@ -105,6 +89,7 @@ public class OWL implements IModelParser, IModelSerializer {
 			OWLOntology o = manager.createOntology(IRI.create(prefix + "/" + id));
 			ret = new Ontology(o, id, this);
 			_ontologies.put(id, ret);
+			_csIndex.put(manager.getOntologyDocumentIRI(o).toString(), id);
 		} catch (OWLOntologyCreationException e) {
 			throw new ThinklabRuntimeException(e);
 		}
@@ -177,6 +162,7 @@ public class OWL implements IModelParser, IModelSerializer {
 		
 		if (!_ontologies.containsKey(namespace)) {
 			_ontologies.put(namespace, new Ontology(ontology, namespace, this));
+			_csIndex.put(manager.getOntologyDocumentIRI(ontology).toString(), namespace);
 		}
 		
 		/*
@@ -421,7 +407,7 @@ public class OWL implements IModelParser, IModelSerializer {
 		if (SemanticType.validate(concept)) {
 			SemanticType st = new SemanticType(concept);
 			IOntology o = _ontologies.get(st.getConceptSpace());
-			return o.getConcept(st.getLocalName());
+			return o == null ? null : o.getConcept(st.getLocalName());
 		}
 		return null;
 	}
@@ -469,17 +455,8 @@ public class OWL implements IModelParser, IModelSerializer {
 		return new Concept(manager.getOWLDataFactory().getOWLThing(), this);
 	}
 
-	public static String getNamespaceFromIRI(IRI iri) {
-
-		String ret = iri.getStart();
-		
-		int sl = ret.lastIndexOf(File.separator);
-		if (sl < 0)
-			sl = ret.lastIndexOf('/');
-		if (sl > 0)
-			ret = ret.substring(sl+1);
-		
-		return ret;
+	public String getConceptSpace(String ontologyIRIScheme) {
+		return _csIndex.get(ontologyIRIScheme);
 	}
 	
 	public void extractCoreOntologies(File dir) throws ThinklabIOException {
@@ -548,7 +525,8 @@ public class OWL implements IModelParser, IModelSerializer {
 				OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
 				input.close();
 				_ontologies.put(pth, new Ontology(ontology, pth, this));
-				
+				_csIndex.put(manager.getOntologyDocumentIRI(ontology).toString(), pth);
+
 			} catch (OWLOntologyAlreadyExistsException e) {
 
 				/*
@@ -557,6 +535,7 @@ public class OWL implements IModelParser, IModelSerializer {
 				OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
 				if (ont != null) {
 					_ontologies.put(pth, new Ontology(ont, pth, this));
+					_csIndex.put(manager.getOntologyDocumentIRI(ont).toString(), pth);
 				}
 				
 			} catch (Exception e) {
@@ -573,6 +552,13 @@ public class OWL implements IModelParser, IModelSerializer {
 	public IConcept getXSDMapping(String string) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public void releaseOntology(IOntology ontology) {
+		// TODO remove from _csIndex - should be harmless to leave for now
+		_ontologies.remove(ontology.getConceptSpace());
+		_namespaces.remove(ontology.getConceptSpace());
+		manager.removeOntology(((Ontology)ontology)._ontology);
 	}
 	
 }

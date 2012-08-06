@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.integratedmodelling.exceptions.ThinklabRuntimeException;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IKnowledge;
@@ -20,20 +21,18 @@ import org.semanticweb.owlapi.model.OWLOntology;
 public class Property implements IProperty {
 
 	String _id;
-	String _cs;
 	OWLEntity _owl;
 	OWL _manager;
 		
 	public Property(OWLEntity p, OWL manager) {
 		_owl = p;
-		_cs = OWL.getNamespaceFromIRI(_owl.getIRI());
 		_id = _owl.getIRI().getFragment();
 		_manager = manager;
 	}
 
 	@Override
 	public String getConceptSpace() {
-		return _cs;
+		return _manager.getConceptSpace(StringUtils.chop(_owl.getIRI().getScheme()));
 	}
 
 	@Override
@@ -57,7 +56,7 @@ public class Property implements IProperty {
 
 	@Override
 	public IOntology getOntology() {
-		return _manager.getOntology(_cs);
+		return _manager.getOntology(getConceptSpace());
 	}
 
 	@Override
@@ -321,5 +320,8 @@ public class Property implements IProperty {
 		return _owl.hashCode();
 	}
 	
-	
+	@Override
+	public String toString() {
+		return getConceptSpace() + ":" + _id;
+	}
 }
