@@ -57,7 +57,7 @@ public class Concept implements IConcept {
 	public String getConceptSpace() {	
 		if (_owl.isTopEntity())
 			return "owl";
-		return _manager.getConceptSpace(StringUtils.chop(_owl.getIRI().getStart()));
+		return _manager.getConceptSpace(_owl.getIRI());
 	}
 
 	@Override

@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Arrays;
 
 import org.integratedmodelling.exceptions.ThinklabException;
+import org.integratedmodelling.exceptions.ThinklabUnsupportedOperationException;
 import org.integratedmodelling.thinklab.api.factories.IKnowledgeManager;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IOntology;
@@ -11,6 +12,7 @@ import org.integratedmodelling.thinklab.api.knowledge.IProperty;
 import org.integratedmodelling.thinklab.api.knowledge.ISemanticObject;
 import org.integratedmodelling.thinklab.api.knowledge.kbox.IKbox;
 import org.integratedmodelling.thinklab.api.lang.IList;
+import org.integratedmodelling.thinklab.api.lang.IModelParser;
 
 /**
  * Knowledge manager for client library, which will not allow any operation but will create
@@ -57,39 +59,33 @@ public class KnowledgeManager implements IKnowledgeManager {
 
 	@Override
 	public void dropKbox(String uri) throws ThinklabException {
-		// TODO Auto-generated method stub
-		
+		throw new ThinklabUnsupportedOperationException("drop kbox");
 	}
 
 	@Override
 	public ISemanticObject<?> parse(String literal, IConcept c)
 			throws ThinklabException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new ThinklabUnsupportedOperationException("parse literal");
 	}
 
 	@Override
 	public ISemanticObject<?> annotate(Object object) throws ThinklabException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new ThinklabUnsupportedOperationException("annotate object");
 	}
 
 	@Override
 	public IKbox createKbox(String uri) throws ThinklabException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new ThinklabUnsupportedOperationException("create kbox");
 	}
 
 	@Override
 	public IKbox requireKbox(String uri) throws ThinklabException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new ThinklabUnsupportedOperationException("require kbox");
 	}
 
 	@Override
 	public Object instantiate(IList a) throws ThinklabException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new ThinklabUnsupportedOperationException("instantiate semantics");
 	}
 
 	@Override
@@ -118,5 +114,9 @@ public class KnowledgeManager implements IKnowledgeManager {
 
 	public void releaseOntology(IOntology ontology) {
 		_manager.releaseOntology(ontology);
+	}
+	
+	public IModelParser getOWLParser() {
+		return _manager;
 	}
 }

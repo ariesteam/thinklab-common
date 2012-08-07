@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
 import org.integratedmodelling.exceptions.ThinklabRuntimeException;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IKnowledge;
@@ -32,7 +31,7 @@ public class Property implements IProperty {
 
 	@Override
 	public String getConceptSpace() {
-		return _manager.getConceptSpace(StringUtils.chop(_owl.getIRI().getScheme()));
+		return _manager.getConceptSpace(_owl.getIRI());
 	}
 
 	@Override

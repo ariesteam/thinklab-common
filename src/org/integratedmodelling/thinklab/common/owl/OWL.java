@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,7 +16,6 @@ import org.integratedmodelling.exceptions.ThinklabException;
 import org.integratedmodelling.exceptions.ThinklabIOException;
 import org.integratedmodelling.exceptions.ThinklabRuntimeException;
 import org.integratedmodelling.exceptions.ThinklabUnsupportedOperationException;
-import org.integratedmodelling.lang.Axiom;
 import org.integratedmodelling.lang.SemanticType;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IOntology;
@@ -40,22 +38,11 @@ import org.semanticweb.owlapi.io.OWLParser;
 import org.semanticweb.owlapi.io.OWLParserException;
 import org.semanticweb.owlapi.io.UnparsableOntologyException;
 import org.semanticweb.owlapi.model.IRI;
-import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
-import org.semanticweb.owlapi.model.OWLAnnotationProperty;
-import org.semanticweb.owlapi.model.OWLAxiom;
-import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLClassExpression;
-import org.semanticweb.owlapi.model.OWLDataProperty;
-import org.semanticweb.owlapi.model.OWLDeclarationAxiom;
-import org.semanticweb.owlapi.model.OWLDisjointClassesAxiom;
-import org.semanticweb.owlapi.model.OWLEntity;
-import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyAlreadyExistsException;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyID;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
-import org.semanticweb.owlapi.model.OWLRestriction;
-import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.model.UnloadableImportException;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.util.AutoIRIMapper;
@@ -75,8 +62,9 @@ public class OWL implements IModelParser, IModelSerializer {
 	
 	private HashMap<String, INamespace> _namespaces = new HashMap<String, INamespace>();
 	private HashMap<String, INamespace> _resourceIndex = new HashMap<String, INamespace>();
-	HashMap<String, String> _csIndex = new HashMap<String, String>();
 	HashMap<String, IOntology>  _ontologies = new HashMap<String, IOntology>();
+	
+	HashMap<String, String> _iri2ns = new HashMap<String, String>();
 	
 	IOntology requireOntology(String id, String prefix) {
 
@@ -89,7 +77,7 @@ public class OWL implements IModelParser, IModelSerializer {
 			OWLOntology o = manager.createOntology(IRI.create(prefix + "/" + id));
 			ret = new Ontology(o, id, this);
 			_ontologies.put(id, ret);
-			_csIndex.put(manager.getOntologyDocumentIRI(o).toString(), id);
+			_iri2ns.put(o.getOntologyID().getDefaultDocumentIRI().toString(), id);
 		} catch (OWLOntologyCreationException e) {
 			throw new ThinklabRuntimeException(e);
 		}
@@ -145,24 +133,11 @@ public class OWL implements IModelParser, IModelSerializer {
 				": only direct ontology import is supported");
 	}
 	
-	String importOntology(OWLOntology ontology, IResolver resolver, String resource, boolean imported) throws ThinklabException {
-
-		String namespace = 
-				getFileName(ontology.getOntologyID().getOntologyIRI().toURI().toString());
+	String importOntology(OWLOntology ontology, IResolver resolver, String resource, String namespace, boolean imported) throws ThinklabException {
 		
-		/*
-		 * clean up namespace ID if necessary
-		 */
-		while (namespace.startsWith(".")) {
-			namespace = namespace.substring(1);
-		}
-		if (namespace.endsWith(".owl")) {
-			namespace = namespace.substring(0, namespace.lastIndexOf('.'));
-		}
 		
 		if (!_ontologies.containsKey(namespace)) {
 			_ontologies.put(namespace, new Ontology(ontology, namespace, this));
-			_csIndex.put(manager.getOntologyDocumentIRI(ontology).toString(), namespace);
 		}
 		
 		/*
@@ -173,93 +148,13 @@ public class OWL implements IModelParser, IModelSerializer {
 		}
 		
 		INamespaceDefinition ns = (INamespaceDefinition) resolver.newLanguageObject(INamespace.class);
-		ns.setId(namespace);
-		ns.setResourceUrl(resource);
-
-		/*
-		 * TODO sync model objects with ontology
-		 */
-		
 		resolver.onNamespaceDeclared();
-		
-		/*
-		 * import all axioms into namespace
-		 */
-		for (OWLAxiom axiom : ontology.getAxioms()) {
-			addAxiom(axiom, ns);
-		}
-		
+		ns.setOntology(_ontologies.get(namespace));
 		resolver.onNamespaceDefined();
 		
 		_namespaces.put(namespace, ns);
 		
 		return namespace;
-	}
-
-	private void addAxiom(OWLAxiom axiom, INamespaceDefinition ns) {
-		
-		if (axiom instanceof OWLDeclarationAxiom) {
-
-			OWLEntity entity = ((OWLDeclarationAxiom)axiom).getEntity();
-			String id = entity.getIRI().getFragment();
-			
-			if (entity instanceof OWLObjectProperty) {
-				ns.addAxiom(Axiom.ObjectPropertyAssertion(id));
-			} else if (entity instanceof OWLDataProperty) {
-				ns.addAxiom(Axiom.DataPropertyAssertion(id));				
-			} else if (entity instanceof OWLAnnotationProperty) {
-				ns.addAxiom(Axiom.AnnotationPropertyAssertion(id));
-			} else if (entity instanceof OWLClass) {
-				ns.addAxiom(Axiom.ClassAssertion(id));				
-			}
-			
-		} else if (axiom instanceof OWLDisjointClassesAxiom) {
-			
-			ArrayList<String> cls = new ArrayList<String>();
-			for (OWLClassExpression e : ((OWLDisjointClassesAxiom)axiom).getClassExpressionsAsList())  {
-				
-				/*
-				 * TBC
-				 * assuming that whatever subclass we have has been declared 
-				 * in this ontology.
-				 */
-				cls.add(e.asOWLClass().getIRI().getFragment());
-			}
-			ns.addAxiom(Axiom.DisjointClasses(cls.toArray(new String[cls.size()])));
-			
-		} else if (axiom instanceof OWLSubClassOfAxiom) {
-			
-			OWLClassExpression sup = ((OWLSubClassOfAxiom)axiom).getSuperClass();
-			OWLClassExpression sub = ((OWLSubClassOfAxiom)axiom).getSubClass();
-			
-			/*
-			 * axioms will change according to subclass type
-			 */
-			if (sup instanceof OWLRestriction<?, ?, ?>) {
-				/*
-				 * import restrictions we support
-				 */
-			} else {
-				
-				/*
-				 * TBC
-				 * assuming that whatever subclass we have has been declared 
-				 * in this ontology.
-				 */
-				String subId = sub.asOWLClass().getIRI().getFragment();
-				
-				/*
-				 * super may be in another ontology, so ensure we have the same namespace or get the proper one.
-				 */
-			}
-			
-		} else if (axiom instanceof OWLAnnotationAssertionAxiom) {
-			
-		}
-		
-		/*
-		 * TODO - for now: ignore inverse properties, equivalent classes
-		 */
 	}
 
 	@Override
@@ -283,7 +178,7 @@ public class OWL implements IModelParser, IModelSerializer {
 			/*
 			 * import ontology and all its imports. Return namespace ID.
 			 */
-			ns = importOntology(ontology, resolver, resource, false);
+			ns = importOntology(ontology, resolver, resource, namespace, false);
 			
 			/*
 			 * do not load this again, it's in the manager.
@@ -349,7 +244,7 @@ public class OWL implements IModelParser, IModelSerializer {
 			 */
 			OWLOntology ontology = manager.getOntology(e.getOntologyID().getOntologyIRI());
 			if (ontology != null) {
-				ns = importOntology(ontology, resolver, resource, false);
+				ns = importOntology(ontology, resolver, resource, namespace, false);
 				_resourceIndex.put(resource, _namespaces.get(ns));
 			}
 
@@ -371,14 +266,17 @@ public class OWL implements IModelParser, IModelSerializer {
 			resolver.onException(exception, 0);
 		}
 
+		/*
+		 * get the finished namespace (with the ontology in it) and set the remaining
+		 * fields.
+		 */
 		INamespace nns = _namespaces.get(ns);
 		((INamespaceDefinition)nns).setResourceUrl(resource);
 		((INamespaceDefinition)nns).setId(namespace);
-
-		/*
-		 * TODO create concept objects in NS?
-		 */
 		
+		OWLOntologyID oid = ((Ontology)(nns.getOntology()))._ontology.getOntologyID();
+		_iri2ns.put(oid.getDefaultDocumentIRI().toString(), namespace);
+
 		return _namespaces.get(ns);
 	}
 
@@ -455,8 +353,21 @@ public class OWL implements IModelParser, IModelSerializer {
 		return new Concept(manager.getOWLDataFactory().getOWLThing(), this);
 	}
 
-	public String getConceptSpace(String ontologyIRIScheme) {
-		return _csIndex.get(ontologyIRIScheme);
+	public String getConceptSpace(IRI iri) {
+
+		String r = MiscUtilities.removeFragment(iri.toURI()).toString();
+		String ret = _iri2ns.get(r);
+		
+		if (ret == null) {
+			/*
+			 * happens, whenever we depend on a concept from a server ontology
+			 * not loaded yet. Must find a way to deal with this.
+			 */
+			System.out.println("porco, porco, porco: " + iri);
+			ret = MiscUtilities.getNameFromURL(r);
+		}
+		
+		return ret;
 	}
 	
 	public void extractCoreOntologies(File dir) throws ThinklabIOException {
@@ -525,7 +436,7 @@ public class OWL implements IModelParser, IModelSerializer {
 				OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
 				input.close();
 				_ontologies.put(pth, new Ontology(ontology, pth, this));
-				_csIndex.put(manager.getOntologyDocumentIRI(ontology).toString(), pth);
+				_iri2ns.put(ontology.getOntologyID().getDefaultDocumentIRI().toString(), pth);
 
 			} catch (OWLOntologyAlreadyExistsException e) {
 
@@ -535,7 +446,7 @@ public class OWL implements IModelParser, IModelSerializer {
 				OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
 				if (ont != null) {
 					_ontologies.put(pth, new Ontology(ont, pth, this));
-					_csIndex.put(manager.getOntologyDocumentIRI(ont).toString(), pth);
+					_iri2ns.put(ont.getOntologyID().getDefaultDocumentIRI().toString(), pth);
 				}
 				
 			} catch (Exception e) {
