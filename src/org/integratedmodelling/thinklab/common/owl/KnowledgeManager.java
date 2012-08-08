@@ -40,6 +40,7 @@ public class KnowledgeManager implements IKnowledgeManager {
 	}
 
 	public KnowledgeManager()  {
+		
 	}	
 	
 	@Override

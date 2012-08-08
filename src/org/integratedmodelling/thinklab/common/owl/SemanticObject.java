@@ -14,6 +14,7 @@ import org.integratedmodelling.thinklab.api.modelling.INamespace;
  * This semantic object is a dummy - will just have is() working when the ontology functions are
  * integrated.
  *
+ *
  * @author Ferd
  *
  */

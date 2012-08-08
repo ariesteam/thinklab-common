@@ -277,6 +277,7 @@ public class OWL implements IModelParser, IModelSerializer {
 		OWLOntologyID oid = ((Ontology)(nns.getOntology()))._ontology.getOntologyID();
 		_iri2ns.put(oid.getDefaultDocumentIRI().toString(), namespace);
 
+		
 		return _namespaces.get(ns);
 	}
 
@@ -363,7 +364,7 @@ public class OWL implements IModelParser, IModelSerializer {
 			 * happens, whenever we depend on a concept from a server ontology
 			 * not loaded yet. Must find a way to deal with this.
 			 */
-			System.out.println("porco, porco, porco: " + iri);
+			System.out.println("NULL: " + iri);
 			ret = MiscUtilities.getNameFromURL(r);
 		}
 		
@@ -467,8 +468,13 @@ public class OWL implements IModelParser, IModelSerializer {
 
 	public void releaseOntology(IOntology ontology) {
 		// TODO remove from _csIndex - should be harmless to leave for now
-		_ontologies.remove(ontology.getConceptSpace());
+		INamespace ns = _namespaces.get(ontology.getConceptSpace());
+		if (ns != null) {
+			_resourceIndex.remove(ns.getResourceUrl());
+		}
 		_namespaces.remove(ontology.getConceptSpace());
+		_ontologies.remove(ontology.getConceptSpace());
+		_iri2ns.remove(((Ontology)ontology)._ontology.getOntologyID().getDefaultDocumentIRI().toString());
 		manager.removeOntology(((Ontology)ontology)._ontology);
 	}
 	

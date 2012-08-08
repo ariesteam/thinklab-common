@@ -52,7 +52,7 @@ public class Ontology implements IOntology {
 		_id = id;
 		_ontology = ontology;
 		_manager = manager;
-		_prefix = _manager.manager.getOntologyDocumentIRI(ontology).toString();
+		_prefix = ontology.getOntologyID().getDefaultDocumentIRI().toString();
 		scan();
 	}
 
