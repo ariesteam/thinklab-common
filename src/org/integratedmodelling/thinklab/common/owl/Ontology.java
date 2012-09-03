@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.integratedmodelling.exceptions.ThinklabException;
 import org.integratedmodelling.exceptions.ThinklabInternalErrorException;
@@ -16,7 +17,10 @@ import org.integratedmodelling.thinklab.api.metadata.IMetadata;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLDataProperty;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyChangeException;
 import org.semanticweb.owlapi.model.OWLProperty;
@@ -39,9 +43,16 @@ public class Ontology implements IOntology {
 	String _prefix;
 	OWL _manager;
 	HashSet<String> _conceptIDs  = new HashSet<String>();
+	
+	/*
+	 * all property
+	 */
 	HashSet<String> _propertyIDs = new HashSet<String>();
 	
 	/*
+	 * property IDs by class - no other way to return the OWL 
+	 * objects quickly.
+	 * 
 	 * what a pain
 	 */
 	HashSet<String> _opropertyIDs = new HashSet<String>();
@@ -165,9 +176,7 @@ public class Ontology implements IOntology {
 				getOWLAnnotationProperty(IRI.create(_prefix + "#" + ID)), _manager);
 		}
 		return null;
-
 	}
-
 
 	@Override
 	public String getURI() {
@@ -187,21 +196,111 @@ public class Ontology implements IOntology {
 		 * ACHTUNG remember to add IDs to appropriate catalogs as classes and property assertions
 		 * are encountered. This can be called incrementally, so better not to call scan() every time.
 		 */
+		OWLDataFactory factory = _ontology.getOWLOntologyManager().getOWLDataFactory();
 		
 		for (IAxiom axiom : axioms) {
+			
 			try {
-				OWLDataFactory factory = _ontology.getOWLOntologyManager().getOWLDataFactory();
+				
 				if (axiom.is(IAxiom.CLASS_ASSERTION)) {
+					
 					OWLClass newcl = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(0)));
 					_ontology.getOWLOntologyManager().addAxiom(_ontology, factory.getOWLDeclarationAxiom(newcl));
 					_conceptIDs.add(axiom.getArgument(0).toString());
+					
 				} else if (axiom.is(IAxiom.SUBCLASS_OF)) {
+					
 					OWLClass p = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(1)));
 					OWLClass c = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(0)));
 					_manager.manager.addAxiom(_ontology, factory.getOWLSubClassOfAxiom(p, c));
-				}
+					
+				} else if (axiom.is(IAxiom.DATA_PROPERTY_ASSERTION)) {
+					
+					OWLDataProperty p = factory.getOWLDataProperty(IRI.create(_prefix + "#" + axiom.getArgument(0)));
+					_propertyIDs.add(axiom.getArgument(0).toString());
+					_dpropertyIDs.add(axiom.getArgument(0).toString());
+
+				} else if (axiom.is(IAxiom.DATA_PROPERTY_DOMAIN)) {
+					
+				} else if (axiom.is(IAxiom.DATA_PROPERTY_RANGE)) {
+					
+				} else if (axiom.is(IAxiom.OBJECT_PROPERTY_ASSERTION)) {
+
+					OWLObjectProperty p = factory.getOWLObjectProperty(IRI.create(_prefix + "#" + axiom.getArgument(0)));
+					_propertyIDs.add(axiom.getArgument(0).toString());
+					_opropertyIDs.add(axiom.getArgument(0).toString());
+					
+				} else if (axiom.is(IAxiom.OBJECT_PROPERTY_DOMAIN)) {
+					
+				} else if (axiom.is(IAxiom.OBJECT_PROPERTY_RANGE)) {
+					
+				} else if (axiom.is(IAxiom.DATATYPE_DEFINITION)) {
+					
+				} else if (axiom.is(IAxiom.DISJOINT_CLASSES)) {
+						
+					Set<OWLClassExpression> classExpressions = new HashSet<OWLClassExpression>();
+					for (Object arg : axiom) {
+						OWLClass p = factory.getOWLClass(IRI.create(_prefix + "#" + arg));
+						classExpressions.add(p);
+					}
+					_manager.manager.addAxiom(_ontology, factory.getOWLDisjointClassesAxiom(classExpressions));
+					
+				} else if (axiom.is(IAxiom.ASYMMETRIC_OBJECT_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.DIFFERENT_INDIVIDUALS)) {
+					
+				} else if (axiom.is(IAxiom.DISJOINT_OBJECT_PROPERTIES)) {
+					
+				} else if (axiom.is(IAxiom.DISJOINT_DATA_PROPERTIES)) {
+					
+				} else if (axiom.is(IAxiom.DISJOINT_UNION)) {
+					
+				} else if (axiom.is(IAxiom.EQUIVALENT_CLASSES)) {
+					
+				} else if (axiom.is(IAxiom.EQUIVALENT_DATA_PROPERTIES)) {
+					
+				} else if (axiom.is(IAxiom.EQUIVALENT_OBJECT_PROPERTIES)) {
+					
+				} else if (axiom.is(IAxiom.FUNCTIONAL_DATA_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.FUNCTIONAL_OBJECT_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.INVERSE_FUNCTIONAL_OBJECT_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.INVERSE_OBJECT_PROPERTIES)) {
+					
+				} else if (axiom.is(IAxiom.IRREFLEXIVE_OBJECT_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.NEGATIVE_DATA_PROPERTY_ASSERTION)) {
+					
+				} else if (axiom.is(IAxiom.NEGATIVE_OBJECT_PROPERTY_ASSERTION)) {
+					
+				} else if (axiom.is(IAxiom.REFLEXIVE_OBJECT_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.SUB_ANNOTATION_PROPERTY_OF)) {
+					
+				} else if (axiom.is(IAxiom.SUB_DATA_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.SUB_OBJECT_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.SUB_PROPERTY_CHAIN_OF)) {
+					
+				} else if (axiom.is(IAxiom.SYMMETRIC_OBJECT_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.TRANSITIVE_OBJECT_PROPERTY)) {
+					
+				} else if (axiom.is(IAxiom.SWRL_RULE)) {
+					
+				} else if (axiom.is(IAxiom.HAS_KEY)) {
+					
+				} else if (axiom.is(IAxiom.ANNOTATION_ASSERTION)) {
+					
+				} else if (axiom.is(IAxiom.ANNOTATION_PROPERTY_DOMAIN)) {
+					
+				} else if (axiom.is(IAxiom.ANNOTATION_PROPERTY_RANGE)) {
+					
+				} 
 			
-				/* TODO etc */
 			
 			} catch (OWLOntologyChangeException e) {
 				throw new ThinklabInternalErrorException(e);

@@ -948,8 +948,8 @@ public class OntologyUtilities {
 		private Set<OWLDataPropertyExpression> restrictedDataProperties;
 		private Set<OWLPropertyRange> objectPropertyFillers;
 		private Set<OWLPropertyRange> dataPropertyFillers;
-		private Set<OWLQuantifiedRestriction> objectRestrictions;
-		private Set<OWLQuantifiedRestriction> dataRestrictions;
+		private Set<OWLQuantifiedRestriction<?, ?, ?>> objectRestrictions;
+		private Set<OWLQuantifiedRestriction<?,?,?>> dataRestrictions;
 		private Set<String[]> objectRestrictionCouples;
 		private Set<String[]> dataRestrictionCouples;
 
@@ -961,8 +961,8 @@ public class OntologyUtilities {
 			objectPropertyFillers = new HashSet<OWLPropertyRange>();
 			dataPropertyFillers = new HashSet<OWLPropertyRange>();
 			processedClasses = new HashSet<OWLClass>();
-			objectRestrictions = new HashSet<OWLQuantifiedRestriction>();
-			dataRestrictions = new HashSet<OWLQuantifiedRestriction>();
+			objectRestrictions = new HashSet<OWLQuantifiedRestriction<?,?,?>>();
+			dataRestrictions = new HashSet<OWLQuantifiedRestriction<?,?,?>>();
 			objectRestrictionCouples = new HashSet<String[]>();
 			dataRestrictionCouples = new HashSet<String[]>();
 			this.onts = onts;
@@ -972,11 +972,11 @@ public class OntologyUtilities {
 			this.processInherited = processInherited;
 		}
 
-		public Set<OWLQuantifiedRestriction> getObjectRestrictions() {
+		public Set<OWLQuantifiedRestriction<?,?,?>> getObjectRestrictions() {
 			return objectRestrictions;
 		}
 
-		public Set<OWLQuantifiedRestriction> getDataRestrictions() {
+		public Set<OWLQuantifiedRestriction<?,?,?>> getDataRestrictions() {
 			return dataRestrictions;
 		}
 
