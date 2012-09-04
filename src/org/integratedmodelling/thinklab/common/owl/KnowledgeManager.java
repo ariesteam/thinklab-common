@@ -91,8 +91,6 @@ public class KnowledgeManager implements IKnowledgeManager {
 
 	@Override
 	public void registerAnnotatedClass(Class<?> cls, IConcept concept) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
