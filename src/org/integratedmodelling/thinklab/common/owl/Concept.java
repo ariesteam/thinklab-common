@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
 import org.integratedmodelling.exceptions.ThinklabException;
 import org.integratedmodelling.exceptions.ThinklabRuntimeException;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
@@ -21,15 +20,19 @@ import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLClassExpressionVisitor;
+import org.semanticweb.owlapi.model.OWLDataAllValuesFrom;
 import org.semanticweb.owlapi.model.OWLDataExactCardinality;
 import org.semanticweb.owlapi.model.OWLDataMaxCardinality;
 import org.semanticweb.owlapi.model.OWLDataMinCardinality;
 import org.semanticweb.owlapi.model.OWLDataProperty;
+import org.semanticweb.owlapi.model.OWLDataSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLLiteral;
+import org.semanticweb.owlapi.model.OWLObjectAllValuesFrom;
 import org.semanticweb.owlapi.model.OWLObjectExactCardinality;
 import org.semanticweb.owlapi.model.OWLObjectMaxCardinality;
 import org.semanticweb.owlapi.model.OWLObjectMinCardinality;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
+import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLQuantifiedRestriction;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
@@ -212,8 +215,69 @@ public class Concept implements IConcept {
 	@Override
 	public Collection<IConcept> getPropertyRange(IProperty property)
 			throws ThinklabException {
-		// TODO Auto-generated method stub
-		return null;
+
+		HashSet<IConcept> ret = new HashSet<IConcept>();
+		
+		/*
+		 * start with the stated range
+		 */
+		if (property.isObjectProperty()) {
+			
+			if (_manager.reasoner != null) {
+				NodeSet<OWLClass> nst = 
+						_manager.reasoner.getObjectPropertyRanges(
+								((Property)property)._owl.asOWLObjectProperty(), false);								
+				for (OWLClass cls : nst.getFlattened()) {
+					ret.add(new Concept(cls, _manager));
+				}
+			} else {
+
+				for (OWLClassExpression zio : 
+					((Property)property)._owl.asOWLObjectProperty().
+						getRanges(_manager.manager.getOntologies())) {
+					ret.add(new Concept(zio.asOWLClass(), _manager));
+				}
+			}
+		} else if (property.isLiteralProperty()) {
+//			for (OWLClassExpression zio : 
+//				((Property)property)._owl.asOWLDataProperty().
+//					getRanges(_manager.manager.getOntologies())) {
+//				ret.add(new Concept(zio.asOWLClass(), _manager));
+//			}
+		}
+		if (property.isObjectProperty()) {
+
+			
+			for (OWLQuantifiedRestriction<?, ?, ?> r : getRestrictions().getObjectRestrictions()) {
+				
+				if (!r.getObjectPropertiesInSignature().contains(((Property)property)._owl)) 
+						continue;
+				
+				if (r instanceof OWLObjectAllValuesFrom) {
+					ret.clear();
+					ret.add(new Concept(((OWLObjectAllValuesFrom)r).getFiller().asOWLClass(), _manager));
+					break;
+				} else if (r instanceof OWLObjectSomeValuesFrom) {
+					ret.add(new Concept(((OWLObjectAllValuesFrom)r).getFiller().asOWLClass(), _manager));
+				} 
+			}
+		} else {
+			for (OWLQuantifiedRestriction<?, ?, ?> r : getRestrictions().getDataRestrictions()) {
+
+				if (!r.getDataPropertiesInSignature().contains(((Property)property)._owl)) 
+					continue;
+				
+				if (r instanceof OWLDataAllValuesFrom) {
+					ret.clear();
+//					ret.add(new Concept(((OWLObjectAllValuesFrom)r).getFiller().asOWLClass(), _manager));
+					break;
+				} else if (r instanceof OWLDataSomeValuesFrom) {
+//					ret.add(new Concept(((OWLDataAllValuesFrom)r).getFiller().asOWLClass(), _manager));
+				} 
+			}
+		}
+		
+		return ret;
 	}
 
 	@Override
@@ -243,13 +307,14 @@ public class Concept implements IConcept {
 		
 		if (property.isFunctional()) 
 			return new int[]{1,1};
-		
+
 		int min = -1, max = -1;
 		
 		if (property.isObjectProperty()) {
 			for (OWLQuantifiedRestriction<?, ?, ?> r : getRestrictions().getObjectRestrictions()) {
 				if (r instanceof OWLObjectExactCardinality) {
 					min = max = ((OWLObjectExactCardinality)r).getCardinality();
+					break;
 				} else if (r instanceof OWLObjectMaxCardinality) {
 					max = ((OWLObjectMaxCardinality)r).getCardinality();
 				} else if (r instanceof OWLObjectMinCardinality) {
@@ -260,6 +325,7 @@ public class Concept implements IConcept {
 			for (OWLQuantifiedRestriction<?, ?, ?> r : getRestrictions().getDataRestrictions()) {
 				if (r instanceof OWLDataExactCardinality) {
 					min = max = ((OWLDataExactCardinality)r).getCardinality();
+					break;
 				} else if (r instanceof OWLDataMaxCardinality) {
 					max = ((OWLDataMaxCardinality)r).getCardinality();
 				} else if (r instanceof OWLDataMinCardinality) {
