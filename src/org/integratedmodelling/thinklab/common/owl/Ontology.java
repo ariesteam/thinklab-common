@@ -210,6 +210,9 @@ public class Ontology implements IOntology {
 					
 				} else if (axiom.is(IAxiom.SUBCLASS_OF)) {
 					
+					/*
+					 * TODO this is wrong - parent may come from other ontology
+					 */
 					OWLClass p = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(1)));
 					OWLClass c = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(0)));
 					_manager.manager.addAxiom(_ontology, factory.getOWLSubClassOfAxiom(p, c));
