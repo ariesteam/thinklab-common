@@ -311,12 +311,12 @@ public class Property implements IProperty {
 
 	@Override
 	public boolean equals(Object obj) {
-		return  obj instanceof Property ? _owl.equals(((Property)obj)._owl) : false;
+		return  obj instanceof Property ? toString().equals(obj.toString()) : false;
 	}
 
 	@Override
 	public int hashCode() {
-		return _owl.hashCode();
+		return toString().hashCode();
 	}
 	
 	@Override

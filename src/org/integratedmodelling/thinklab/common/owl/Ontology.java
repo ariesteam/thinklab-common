@@ -58,6 +58,7 @@ public class Ontology implements IOntology {
 	HashSet<String> _opropertyIDs = new HashSet<String>();
 	HashSet<String> _dpropertyIDs = new HashSet<String>();
 	HashSet<String> _apropertyIDs = new HashSet<String>();
+	private String _resourceUrl;
 	
 	Ontology(OWLOntology ontology, String id, OWL manager) {
 		_id = id;
@@ -330,6 +331,20 @@ public class Ontology implements IOntology {
 	@Override
 	public int getPropertyCount() {
 		return _propertyIDs.size();
+	}
+
+	public void setResourceUrl(String string) {
+		_resourceUrl = string;
+	}
+
+	/**
+	 * Return the URL of the resource this was read from, or null if
+	 * it was created by the API.
+	 * 
+	 * @return
+	 */
+	public String getResourceUrl() {
+		return _resourceUrl;
 	}
 
 }

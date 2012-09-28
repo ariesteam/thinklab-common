@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -453,7 +454,9 @@ public class OWL implements IModelParser, IModelSerializer {
 				input = new FileInputStream(f);
 				OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
 				input.close();
-				_ontologies.put(pth, new Ontology(ontology, pth, this));
+				Ontology ont = new Ontology(ontology, pth, this);
+				ont.setResourceUrl(f.toURI().toURL().toString());
+				_ontologies.put(pth, ont);
 				_iri2ns.put(ontology.getOntologyID().getDefaultDocumentIRI().toString(), pth);
 
 			} catch (OWLOntologyAlreadyExistsException e) {
@@ -478,6 +481,42 @@ public class OWL implements IModelParser, IModelSerializer {
 	}
 
 
+	public IOntology refreshOntology(URL url, String id) throws ThinklabException {
+	
+		InputStream input;
+		Ontology ret = null;
+		
+		try {
+			input = url.openStream();
+			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
+			input.close();
+			ret = new Ontology(ontology, id, this);
+			ret.setResourceUrl(url.toString());
+			_ontologies.put(id, ret);
+			_iri2ns.put(ontology.getOntologyID().getDefaultDocumentIRI().toString(), id);
+
+		} catch (OWLOntologyAlreadyExistsException e) {
+
+			/*
+			 * already imported- wrap it and use it as is.
+			 */
+			OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
+			if (ont != null) {
+				_ontologies.put(id, new Ontology(ont, id, this));
+				_iri2ns.put(ont.getOntologyID().getDefaultDocumentIRI().toString(), id);
+			}
+			
+		} catch (Exception e) {
+			
+			/*
+			 * everything else is probably an error
+			 */
+			throw new ThinklabIOException(e);
+		}
+		
+		return ret;
+	}
+	
 	public IConcept getXSDMapping(String string) {
 		// TODO Auto-generated method stub
 		return null;

@@ -420,12 +420,12 @@ public class Concept implements IConcept {
 	
 	@Override
 	public boolean equals(Object obj) {
-		return  obj instanceof Concept ? _owl.equals(((Concept)obj)._owl) : false;
+		return  obj instanceof Concept ? toString().equals(obj.toString()) : false;
 	}
 
 	@Override
 	public int hashCode() {
-		return _owl.hashCode();
+		return toString().hashCode();
 	}
 
 	@Override
