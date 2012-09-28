@@ -125,7 +125,7 @@ public class Property implements IProperty {
 				for (OWLClassExpression c : _owl.asOWLObjectProperty().getRanges(
 						_manager.manager.getOntologies())) {
 					if (!c.isAnonymous())
-						ret.add(new Concept(c.asOWLClass(), _manager));
+						ret.add(new Concept(c.asOWLClass(), _manager, _manager.getConceptSpace(c.asOWLClass().getIRI())));
 				}
 			}
 		}
@@ -140,12 +140,12 @@ public class Property implements IProperty {
 			if (_owl.isOWLDataProperty()) {
 				for (OWLClassExpression c : _owl.asOWLDataProperty().getDomains(
 						_manager.manager.getOntologies())) {
-					ret.add(new Concept(c.asOWLClass(), _manager));
+					ret.add(new Concept(c.asOWLClass(), _manager, _manager.getConceptSpace(c.asOWLClass().getIRI())));
 				}
 			} else if (_owl.isOWLObjectProperty()) {
 				for (OWLClassExpression c : _owl.asOWLObjectProperty().getDomains(
 						_manager.manager.getOntologies())) {
-					ret.add(new Concept(c.asOWLClass(), _manager));
+					ret.add(new Concept(c.asOWLClass(), _manager, _manager.getConceptSpace(c.asOWLClass().getIRI())));
 				}
 			}
 		}

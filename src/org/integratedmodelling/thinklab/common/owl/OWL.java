@@ -321,7 +321,7 @@ public class OWL implements IModelParser, IModelSerializer {
 			IOntology o = _ontologies.get(st.getConceptSpace());
 			
 			if (o == null && _systemConcepts.containsKey(st)) {
-				return new Concept(_systemConcepts.get(st), this);
+				return new Concept(_systemConcepts.get(st), this, st.getConceptSpace());
 			}
 			
 			return o == null ? null : o.getConcept(st.getLocalName());
@@ -369,7 +369,7 @@ public class OWL implements IModelParser, IModelSerializer {
 	}
 
 	public IConcept getRootConcept() {
-		return new Concept(manager.getOWLDataFactory().getOWLThing(), this);
+		return new Concept(manager.getOWLDataFactory().getOWLThing(), this, "owl");
 	}
 
 	public String getConceptSpace(IRI iri) {

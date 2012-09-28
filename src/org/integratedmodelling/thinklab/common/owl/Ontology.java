@@ -101,7 +101,7 @@ public class Ontology implements IOntology {
 		
 		ArrayList<IConcept> ret = new ArrayList<IConcept>();
 		for (OWLClass c : _ontology.getClassesInSignature()) {
-			ret.add(new Concept(c, _manager));
+			ret.add(new Concept(c, _manager, _id));
 		}
  		return ret;
 	}
@@ -157,7 +157,7 @@ public class Ontology implements IOntology {
 		if (_conceptIDs.contains(ID)) {
 			return new Concept(
 				_ontology.getOWLOntologyManager().getOWLDataFactory().
-					getOWLClass(IRI.create(_prefix + "#" + ID)), _manager);
+					getOWLClass(IRI.create(_prefix + "#" + ID)), _manager, _id);
 		}
 		return null;
 	}

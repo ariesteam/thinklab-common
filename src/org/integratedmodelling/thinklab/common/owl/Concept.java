@@ -47,12 +47,14 @@ import org.semanticweb.owlapi.reasoner.NodeSet;
 public class Concept implements IConcept {
 
 	String _id;
+	String _cs;
 	OWL _manager;
 	OWLClass _owl;
 	
-	Concept(OWLClass c, OWL manager) {
+	Concept(OWLClass c, OWL manager, String cs) {
 		_owl = c;
 		_id = c.getIRI().getFragment();
+		_cs = cs;
 		_manager = manager;
 	}
 
@@ -60,7 +62,8 @@ public class Concept implements IConcept {
 	public String getConceptSpace() {	
 		if (_owl.isTopEntity())
 			return "owl";
-		return _manager.getConceptSpace(_owl.getIRI());
+//		return _manager.getConceptSpace(_owl.getIRI());
+		return _cs;
 	}
 
 	@Override
@@ -108,7 +111,7 @@ public class Concept implements IConcept {
 		
 			for (OWLClassExpression s : set) {
 				if (!(s.isAnonymous() || s.isOWLNothing()))
-					concepts.add(new Concept(s.asOWLClass(), _manager));
+					concepts.add(new Concept(s.asOWLClass(), _manager, _manager.getConceptSpace(s.asOWLClass().getIRI())));
 			}
 		}
 
@@ -127,7 +130,7 @@ public class Concept implements IConcept {
 		if (_manager.reasoner != null) {
 			NodeSet<OWLClass> parents = _manager.reasoner.getSuperClasses(_owl, false);
 			for (OWLClass cls : parents.getFlattened()) {
-				concepts.add(new Concept(cls, _manager));
+				concepts.add(new Concept(cls, _manager, _manager.getConceptSpace(cls.getIRI())));
 			}
 				
 			return concepts;
@@ -156,7 +159,7 @@ public class Concept implements IConcept {
 			
 			for (OWLClassExpression s : set) {
 				if (!(s.isAnonymous() || s.isOWLNothing() || s.isOWLThing()))
-					concepts.add(new Concept(s.asOWLClass(), _manager));
+					concepts.add(new Concept(s.asOWLClass(), _manager, _manager.getConceptSpace(s.asOWLClass().getIRI())));
 			}
 			if (set.isEmpty() && ((OWLClass)_owl).isOWLThing()) {
 				for (IOntology onto : _manager._ontologies.values()) {
@@ -228,14 +231,14 @@ public class Concept implements IConcept {
 						_manager.reasoner.getObjectPropertyRanges(
 								((Property)property)._owl.asOWLObjectProperty(), false);								
 				for (OWLClass cls : nst.getFlattened()) {
-					ret.add(new Concept(cls, _manager));
+					ret.add(new Concept(cls, _manager, _manager.getConceptSpace(cls.getIRI())));
 				}
 			} else {
 
 				for (OWLClassExpression zio : 
 					((Property)property)._owl.asOWLObjectProperty().
 						getRanges(_manager.manager.getOntologies())) {
-					ret.add(new Concept(zio.asOWLClass(), _manager));
+					ret.add(new Concept(zio.asOWLClass(), _manager, _manager.getConceptSpace(zio.asOWLClass().getIRI())));
 				}
 			}
 		} else if (property.isLiteralProperty()) {
@@ -255,10 +258,12 @@ public class Concept implements IConcept {
 				
 				if (r instanceof OWLObjectAllValuesFrom) {
 					ret.clear();
-					ret.add(new Concept(((OWLObjectAllValuesFrom)r).getFiller().asOWLClass(), _manager));
+					OWLClass zz = ((OWLObjectAllValuesFrom)r).getFiller().asOWLClass();
+					ret.add(new Concept(zz, _manager, _manager.getConceptSpace(zz.getIRI())));
 					break;
 				} else if (r instanceof OWLObjectSomeValuesFrom) {
-					ret.add(new Concept(((OWLObjectAllValuesFrom)r).getFiller().asOWLClass(), _manager));
+					OWLClass zz = ((OWLObjectSomeValuesFrom)r).getFiller().asOWLClass();
+					ret.add(new Concept(zz, _manager, _manager.getConceptSpace(zz.getIRI())));
 				} 
 			}
 		} else {
@@ -373,7 +378,7 @@ public class Concept implements IConcept {
 			HashSet<IConcept> ret = new HashSet<IConcept>();
 			NodeSet<OWLClass> cset = _manager.reasoner.getSubClasses(_owl, false);
 			for (OWLClass cl : cset.getFlattened()) {
-				ret.add(new Concept(cl, _manager));
+				ret.add(new Concept(cl, _manager, _manager.getConceptSpace(cl.getIRI())));
 			}
 			return ret;
 		}
