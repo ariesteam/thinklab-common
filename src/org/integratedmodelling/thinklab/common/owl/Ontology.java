@@ -110,13 +110,13 @@ public class Ontology implements IOntology {
 	public Collection<IProperty> getProperties() {
 		ArrayList<IProperty> ret = new ArrayList<IProperty>();
 		for (OWLProperty<?,?>  p : _ontology.getDataPropertiesInSignature()) {
-			ret.add(new Property(p, _manager));
+			ret.add(new Property(p, _manager, _id));
 		}
 		for (OWLProperty<?,?>  p : _ontology.getObjectPropertiesInSignature()) {
-			ret.add(new Property(p, _manager));
+			ret.add(new Property(p, _manager, _id));
 		}
 		for (OWLAnnotationProperty  p : _ontology.getAnnotationPropertiesInSignature()) {
-			ret.add(new Property(p, _manager));
+			ret.add(new Property(p, _manager, _id));
 		}
 
  		return ret;
@@ -166,15 +166,15 @@ public class Ontology implements IOntology {
 	public IProperty getProperty(String ID) {
 		if (_opropertyIDs.contains(ID)) {
 			return new Property(_ontology.getOWLOntologyManager().getOWLDataFactory().
-				getOWLObjectProperty(IRI.create(_prefix + "#" + ID)), _manager);
+				getOWLObjectProperty(IRI.create(_prefix + "#" + ID)), _manager, _id);
 		}
 		if (_dpropertyIDs.contains(ID)) {
 			return new Property(_ontology.getOWLOntologyManager().getOWLDataFactory().
-				getOWLDataProperty(IRI.create(_prefix + "#" + ID)), _manager);
+				getOWLDataProperty(IRI.create(_prefix + "#" + ID)), _manager, _id);
 		}
 		if (_apropertyIDs.contains(ID)) {
 			return new Property(_ontology.getOWLOntologyManager().getOWLDataFactory().
-				getOWLAnnotationProperty(IRI.create(_prefix + "#" + ID)), _manager);
+				getOWLAnnotationProperty(IRI.create(_prefix + "#" + ID)), _manager, _id);
 		}
 		return null;
 	}

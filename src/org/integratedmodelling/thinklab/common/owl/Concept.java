@@ -195,12 +195,12 @@ public class Concept implements IConcept {
 				for (OWLObjectProperty op : ontology.getObjectPropertiesInSignature(true)) {
 					Set<OWLClassExpression> rang = op.getDomains(_manager.manager.getOntologies());
 					if (rang.contains(_owl))
-						properties.add(new Property(op, _manager));
+						properties.add(new Property(op, _manager, _manager.getConceptSpace(op.getIRI())));
 				}
 				for (OWLDataProperty op : ontology.getDataPropertiesInSignature(true)) {
 					Set<OWLClassExpression> rang = op.getDomains(_manager.manager.getOntologies());
 					if (rang.contains(_owl))
-						properties.add(new Property(op, _manager));
+						properties.add(new Property(op, _manager, _manager.getConceptSpace(op.getIRI())));
 				}
 			}
 		return properties;
@@ -418,7 +418,7 @@ public class Concept implements IConcept {
 		
 		for (OWLAnnotation annotation : _owl.getAnnotations(((Ontology)getOntology())._ontology)) {
 			OWLLiteral l = (OWLLiteral) annotation.getValue();
-			ret.put(new Property(annotation.getProperty(), _manager), l.getLiteral());
+			ret.put(new Property(annotation.getProperty(), _manager, _manager.getConceptSpace(annotation.getProperty().getIRI())), l.getLiteral());
 		}
 		return ret;
 	}

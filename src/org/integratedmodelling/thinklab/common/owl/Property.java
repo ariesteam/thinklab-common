@@ -14,24 +14,27 @@ import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataPropertyExpression;
 import org.semanticweb.owlapi.model.OWLDataRange;
 import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
 import org.semanticweb.owlapi.model.OWLOntology;
 
 public class Property implements IProperty {
 
 	String _id;
+	String _cs;
 	OWLEntity _owl;
 	OWL _manager;
 		
-	public Property(OWLEntity p, OWL manager) {
+	public Property(OWLEntity p, OWL manager, String cs) {
 		_owl = p;
 		_id = _owl.getIRI().getFragment();
 		_manager = manager;
+		_cs = cs;
 	}
 
 	@Override
 	public String getConceptSpace() {
-		return _manager.getConceptSpace(_owl.getIRI());
+		return _cs;
 	}
 
 	@Override
@@ -96,7 +99,8 @@ public class Property implements IProperty {
 							", which has multiple inverses");
 			
 				if (dio.size() > 0) {
-					ret = new Property(dio.iterator().next().asOWLObjectProperty(), _manager);
+					OWLObjectProperty op = dio.iterator().next().asOWLObjectProperty();
+					ret = new Property(op, _manager, _manager.getConceptSpace(op.getIRI()));
 				}
 			}
 		}
@@ -184,14 +188,14 @@ public class Property implements IProperty {
 				for (OWLOntology o : onts)  {
 					for (OWLDataPropertyExpression p : 
 						_owl.asOWLDataProperty().getSuperProperties(o)) {
-						ret.add(new Property(p.asOWLDataProperty(), _manager));
+						ret.add(new Property(p.asOWLDataProperty(), _manager, _manager.getConceptSpace(p.asOWLDataProperty().getIRI())));
 					}
 				}
 			} else if (_owl.isOWLObjectProperty()) {
 				for (OWLOntology o : onts)  {
 					for (OWLObjectPropertyExpression p : 
 						_owl.asOWLObjectProperty().getSuperProperties(o)) {
-						ret.add(new Property(p.asOWLObjectProperty(), _manager));
+						ret.add(new Property(p.asOWLObjectProperty(), _manager, _manager.getConceptSpace(p.asOWLObjectProperty().getIRI())));
 					}
 				}
 			}
@@ -259,7 +263,7 @@ public class Property implements IProperty {
 				synchronized (this._owl) {
 					for (OWLDataPropertyExpression p : 
 						_owl.asOWLDataProperty().getSubProperties(o)) {
-						ret.add(new Property(p.asOWLDataProperty(), _manager));
+						ret.add(new Property(p.asOWLDataProperty(), _manager, _manager.getConceptSpace(p.asOWLDataProperty().getIRI())));
 					}
 				}
 			}
@@ -268,7 +272,7 @@ public class Property implements IProperty {
 				synchronized (this._owl) {
 					for (OWLObjectPropertyExpression p : 
 							_owl.asOWLObjectProperty().getSubProperties(o)) {
-						ret.add(new Property(p.asOWLObjectProperty(), _manager));
+						ret.add(new Property(p.asOWLObjectProperty(), _manager, _manager.getConceptSpace(p.asOWLObjectProperty().getIRI())));
 					}
 				}
 			}
