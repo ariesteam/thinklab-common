@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -65,8 +66,8 @@ public class OWL implements IModelParser, IModelSerializer {
 	HashMap<String, IOntology>  _ontologies = new HashMap<String, IOntology>();
 	
 	HashMap<String, String> _iri2ns = new HashMap<String, String>();
-	
-	IOntology requireOntology(String id, String prefix) {
+		
+	public IOntology requireOntology(String id, String prefix) {
 
 		if (_ontologies.get(id) != null) {
 			return _ontologies.get(id);
@@ -113,7 +114,7 @@ public class OWL implements IModelParser, IModelSerializer {
 	 * parser. Using this object as a singleton will (for now) enforce this
 	 * behavior.
 	 */
-	OWL() {
+	public OWL() {
 		manager = OWLManager.createOWLOntologyManager();
 	}
 	
@@ -467,6 +468,7 @@ public class OWL implements IModelParser, IModelSerializer {
 	}
 
 	public void releaseOntology(IOntology ontology) {
+	
 		// TODO remove from _csIndex - should be harmless to leave for now
 		INamespace ns = _namespaces.get(ontology.getConceptSpace());
 		if (ns != null) {
@@ -476,6 +478,17 @@ public class OWL implements IModelParser, IModelSerializer {
 		_ontologies.remove(ontology.getConceptSpace());
 		_iri2ns.remove(((Ontology)ontology)._ontology.getOntologyID().getDefaultDocumentIRI().toString());
 		manager.removeOntology(((Ontology)ontology)._ontology);
+	}
+
+	
+	public void clear() {
+		Collection<String> keys = new HashSet<String>(_ontologies.keySet());
+		for (String o : keys)
+			releaseOntology(getOntology(o));
+	}
+
+	public Collection<IOntology> getOntologies() {
+		return _ontologies.values();
 	}
 	
 }

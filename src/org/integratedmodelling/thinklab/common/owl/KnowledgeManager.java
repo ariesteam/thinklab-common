@@ -118,4 +118,9 @@ public class KnowledgeManager implements IKnowledgeManager {
 	public IModelParser getOWLParser() {
 		return _manager;
 	}
+
+	@Override
+	public IConcept getRootConcept() {
+		return _manager.getRootConcept();
+	}
 }
