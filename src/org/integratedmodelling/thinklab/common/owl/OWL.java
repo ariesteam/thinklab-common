@@ -39,6 +39,7 @@ import org.semanticweb.owlapi.io.OWLParser;
 import org.semanticweb.owlapi.io.OWLParserException;
 import org.semanticweb.owlapi.io.UnparsableOntologyException;
 import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyAlreadyExistsException;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
@@ -66,6 +67,7 @@ public class OWL implements IModelParser, IModelSerializer {
 	HashMap<String, IOntology>  _ontologies = new HashMap<String, IOntology>();
 	
 	HashMap<String, String> _iri2ns = new HashMap<String, String>();
+	HashMap<SemanticType, OWLClass> _systemConcepts = new HashMap<SemanticType, OWLClass>();
 		
 	public IOntology requireOntology(String id, String prefix) {
 
@@ -116,6 +118,7 @@ public class OWL implements IModelParser, IModelSerializer {
 	 */
 	public OWL() {
 		manager = OWLManager.createOWLOntologyManager();
+		initialize();
 	}
 	
 	/**
@@ -124,8 +127,18 @@ public class OWL implements IModelParser, IModelSerializer {
 	 */
 	public OWL(OWLOntologyManager manager) {
 		this.manager = manager;
+		initialize();
 	}
 	
+	private void initialize() {
+		
+		/*
+		 * TODO insert basic datatypes as well
+		 */
+		_systemConcepts.put(new SemanticType("owl:Thing"), manager.getOWLDataFactory().getOWLThing());
+		_systemConcepts.put(new SemanticType("owl:Nothing"), manager.getOWLDataFactory().getOWLNothing());
+	}
+
 	@Override
 	public INamespace parseInNamespace(InputStream input, String namespace,
 			IResolver resolver) throws ThinklabException {
@@ -300,13 +313,16 @@ public class OWL implements IModelParser, IModelSerializer {
 	 * the three knowledge manager methods we implement, so we can serve as delegate to
 	 * a KM for these.
 	 */
-	
-	
 	public IConcept getConcept(String concept) {
 
 		if (SemanticType.validate(concept)) {
 			SemanticType st = new SemanticType(concept);
 			IOntology o = _ontologies.get(st.getConceptSpace());
+			
+			if (o == null && _systemConcepts.containsKey(st)) {
+				return new Concept(_systemConcepts.get(st), this);
+			}
+			
 			return o == null ? null : o.getConcept(st.getLocalName());
 		}
 		return null;
@@ -377,7 +393,7 @@ public class OWL implements IModelParser, IModelSerializer {
 		dir.mkdirs();
 		
 		Reflections reflections = new Reflections(new ConfigurationBuilder()
-      	    .setUrls(ClasspathHelper.forPackage("thinklab.common.knowledge"))
+      	    .setUrls(ClasspathHelper.forPackage("knowledge"))
       	    .setScanners(new ResourcesScanner()));
 		
 		for (String of : reflections.getResources(Pattern.compile(".*\\.owl"))) {
