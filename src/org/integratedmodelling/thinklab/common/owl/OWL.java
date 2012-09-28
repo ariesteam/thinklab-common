@@ -334,6 +334,8 @@ public class OWL implements IModelParser, IModelSerializer {
 		if (SemanticType.validate(concept)) {
 			SemanticType st = new SemanticType(concept);
 			IOntology o = _ontologies.get(st.getConceptSpace());
+			if (o == null)
+				return null;
 			return o.getProperty(st.getLocalName());
 		}
 		return null;

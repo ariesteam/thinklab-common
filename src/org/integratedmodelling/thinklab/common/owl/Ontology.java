@@ -6,8 +6,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.integratedmodelling.exceptions.ThinklabException;
 import org.integratedmodelling.exceptions.ThinklabInternalErrorException;
+import org.integratedmodelling.exceptions.ThinklabValidationException;
 import org.integratedmodelling.thinklab.api.knowledge.IAxiom;
 import org.integratedmodelling.thinklab.api.knowledge.IConcept;
 import org.integratedmodelling.thinklab.api.knowledge.IOntology;
@@ -65,6 +67,9 @@ public class Ontology implements IOntology {
 		_ontology = ontology;
 		_manager = manager;
 		_prefix = ontology.getOntologyID().getDefaultDocumentIRI().toString();
+		while (_prefix.endsWith("#"))
+			_prefix = StringUtils.chop(_prefix);
+		
 		scan();
 	}
 
@@ -74,6 +79,7 @@ public class Ontology implements IOntology {
 	 * sync with any changes, which is a pain.
 	 */
 	private void scan() {
+		
 		for (OWLClass c : _ontology.getClassesInSignature()) {
 			_conceptIDs.add(c.getIRI().getFragment());
 		}
@@ -210,13 +216,10 @@ public class Ontology implements IOntology {
 					_conceptIDs.add(axiom.getArgument(0).toString());
 					
 				} else if (axiom.is(IAxiom.SUBCLASS_OF)) {
-					
-					/*
-					 * TODO this is wrong - parent may come from other ontology
-					 */
-					OWLClass p = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(1)));
-					OWLClass c = factory.getOWLClass(IRI.create(_prefix + "#" + axiom.getArgument(0)));
-					_manager.manager.addAxiom(_ontology, factory.getOWLSubClassOfAxiom(p, c));
+
+					OWLClass subclass = findClass(axiom.getArgument(1).toString());
+					OWLClass superclass = findClass(axiom.getArgument(0).toString());
+					_manager.manager.addAxiom(_ontology, factory.getOWLSubClassOfAxiom(subclass, superclass));
 					
 				} else if (axiom.is(IAxiom.DATA_PROPERTY_ASSERTION)) {
 					
@@ -310,6 +313,25 @@ public class Ontology implements IOntology {
 				throw new ThinklabInternalErrorException(e);
 			}
 		}
+		
+		scan();
+	}
+
+	private OWLClass findClass(String c) throws ThinklabValidationException {
+		
+		if (c.contains(":")) {
+			
+			IConcept cc = _manager.getConcept(c);
+			if (cc == null)
+				throw new ThinklabValidationException("concept " + c + " does not exist");
+
+			/*
+			 * TODO ensure ontology is imported?
+			 */
+			
+			return ((Concept)cc)._owl;
+		} 
+		return _ontology.getOWLOntologyManager().getOWLDataFactory().getOWLClass(IRI.create(_prefix + "#" + c));
 	}
 
 	@Override

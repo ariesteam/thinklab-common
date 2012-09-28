@@ -89,6 +89,8 @@ public class Concept implements IConcept {
 		Collection<IConcept> collection = getAllParents();
 		collection.add(this);
 
+		boolean diozeo = collection.contains(concept);
+		
 		return collection.contains(concept);
 	}
 
@@ -110,7 +112,7 @@ public class Concept implements IConcept {
 			Set<OWLClassExpression> set = _owl.getSuperClasses(_manager.manager.getOntologies());
 		
 			for (OWLClassExpression s : set) {
-				if (!(s.isAnonymous() || s.isOWLNothing()))
+				if (!(s.isAnonymous() || s.asOWLClass().isBuiltIn()))
 					concepts.add(new Concept(s.asOWLClass(), _manager, _manager.getConceptSpace(s.asOWLClass().getIRI())));
 			}
 		}
@@ -125,12 +127,14 @@ public class Concept implements IConcept {
 
 	@Override
 	public Collection<IConcept> getAllParents() {
+		
 		Set<IConcept> concepts = new HashSet<IConcept>();
 		
 		if (_manager.reasoner != null) {
 			NodeSet<OWLClass> parents = _manager.reasoner.getSuperClasses(_owl, false);
 			for (OWLClass cls : parents.getFlattened()) {
-				concepts.add(new Concept(cls, _manager, _manager.getConceptSpace(cls.getIRI())));
+				if (!cls.isBuiltIn())
+					concepts.add(new Concept(cls, _manager, _manager.getConceptSpace(cls.getIRI())));
 			}
 				
 			return concepts;
@@ -172,6 +176,7 @@ public class Concept implements IConcept {
 
 	@Override
 	public Collection<IProperty> getProperties() {
+		
 		Collection<IProperty> props = getDirectProperties();
 		ArrayList<Collection<IProperty>> psets = new ArrayList<Collection<IProperty>>();
 		
@@ -188,10 +193,17 @@ public class Concept implements IConcept {
 
 	public Collection<IProperty> getDirectProperties() {
 		
-		OWLOntology ontology = ((Ontology)(getOntology()))._ontology;
-		
 		Set<IProperty> properties = new HashSet<IProperty>();
-			synchronized (ontology) {
+		/*
+		 * builtin
+		 */
+		if (getOntology()== null)
+			return properties;
+			
+		OWLOntology ontology = ((Ontology)(getOntology()))._ontology;
+
+		
+		synchronized (ontology) {
 				for (OWLObjectProperty op : ontology.getObjectPropertiesInSignature(true)) {
 					Set<OWLClassExpression> rang = op.getDomains(_manager.manager.getOntologies());
 					if (rang.contains(_owl))
@@ -407,6 +419,8 @@ public class Concept implements IConcept {
 	
 	public RestrictionVisitor getRestrictions() {
 		RestrictionVisitor visitor = new RestrictionVisitor(_manager.manager.getOntologies());
+		if (getOntology() == null)
+			return visitor;
 		for (OWLSubClassOfAxiom ax : ((Ontology)(getOntology()))._ontology.getSubClassAxiomsForSubClass(_owl)) {
 			ax.getSuperClass().accept((OWLClassExpressionVisitor)visitor);
 		}
@@ -415,7 +429,8 @@ public class Concept implements IConcept {
 	
 	public Map<IProperty, String> getAnnotations() {
 		HashMap<IProperty, String> ret = new HashMap<IProperty, String>();
-		
+		if (getOntology() == null)
+			return ret;
 		for (OWLAnnotation annotation : _owl.getAnnotations(((Ontology)getOntology())._ontology)) {
 			OWLLiteral l = (OWLLiteral) annotation.getValue();
 			ret.put(new Property(annotation.getProperty(), _manager, _manager.getConceptSpace(annotation.getProperty().getIRI())), l.getLiteral());
