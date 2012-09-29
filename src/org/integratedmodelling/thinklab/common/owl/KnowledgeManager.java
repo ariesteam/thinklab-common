@@ -100,7 +100,7 @@ public class KnowledgeManager implements IKnowledgeManager {
 
 	@Override
 	public IConcept getXSDMapping(String string) {
-		return _manager.getXSDMapping(string);
+		return _manager.getDatatypeMapping(string);
 	}
 
 	public void loadKnowledge(File directory) throws ThinklabException {

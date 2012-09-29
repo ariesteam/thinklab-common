@@ -26,11 +26,19 @@ import java.io.IOException;
 import org.integratedmodelling.exceptions.ThinklabIOException;
 import org.integratedmodelling.exceptions.ThinklabRuntimeException;
 
-public class LogAppender {
+/**
+ * Simple log appender for debugging. Simplest way to use is Debug.print(....) which
+ * will append the string to $HOME/debug.txt.
+ * 
+ * @author Ferd
+ *
+ */
+public class Debug {
 
 	private File fname;
-
-	public LogAppender(String file, boolean append) throws ThinklabIOException {
+	static Debug _debug;
+	
+	public Debug(String file, boolean append) throws ThinklabIOException {
 		
 		this.fname = new File(file);
 		
@@ -49,5 +57,15 @@ public class LogAppender {
 		} catch (IOException e) {
 			throw new ThinklabRuntimeException(e);
 		}
+	}
+	
+	public static void println(String s) {
+		if (_debug == null) {
+			try {
+				_debug = new Debug(System.getProperty("user.home") + File.separator + "debug.txt", true);
+			} catch (ThinklabIOException e) {
+			};
+		}
+		_debug.print(s);
 	}
 }

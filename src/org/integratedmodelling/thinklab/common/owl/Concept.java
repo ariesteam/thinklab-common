@@ -440,7 +440,9 @@ public class Concept implements IConcept {
 	
 	@Override
 	public boolean equals(Object obj) {
-		return  obj instanceof Concept ? toString().equals(obj.toString()) : false;
+		return obj instanceof Concept ? 
+			toString().equals(obj.toString()) : 
+			(obj instanceof String ? ((String)obj).equals(toString()) : false);
 	}
 
 	@Override

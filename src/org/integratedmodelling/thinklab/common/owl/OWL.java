@@ -29,6 +29,7 @@ import org.integratedmodelling.thinklab.api.modelling.INamespace;
 import org.integratedmodelling.thinklab.api.modelling.parsing.INamespaceDefinition;
 import org.integratedmodelling.thinklab.common.utils.CamelCase;
 import org.integratedmodelling.thinklab.common.utils.CopyURL;
+import org.integratedmodelling.thinklab.common.utils.Debug;
 import org.integratedmodelling.thinklab.common.utils.MiscUtilities;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
@@ -69,7 +70,8 @@ public class OWL implements IModelParser, IModelSerializer {
 	
 	HashMap<String, String> _iri2ns = new HashMap<String, String>();
 	HashMap<SemanticType, OWLClass> _systemConcepts = new HashMap<SemanticType, OWLClass>();
-		
+	HashMap<String, IConcept> _xsdMappings = new HashMap<String, IConcept>();
+	
 	public IOntology requireOntology(String id, String prefix) {
 
 		if (_ontologies.get(id) != null) {
@@ -519,11 +521,14 @@ public class OWL implements IModelParser, IModelSerializer {
 		return ret;
 	}
 	
-	public IConcept getXSDMapping(String string) {
-		// TODO Auto-generated method stub
-		return null;
+	public IConcept getDatatypeMapping(String string) {
+		return _xsdMappings.get(string);
 	}
 
+	public IConcept registerDatatypeMapping(String xsd, IConcept concept) {
+		return _xsdMappings.put(xsd, concept);
+	}
+	
 	public void releaseOntology(IOntology ontology) {
 	
 		// TODO remove from _csIndex - should be harmless to leave for now

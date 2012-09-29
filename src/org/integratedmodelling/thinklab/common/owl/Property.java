@@ -13,6 +13,7 @@ import org.integratedmodelling.thinklab.api.metadata.IMetadata;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataPropertyExpression;
 import org.semanticweb.owlapi.model.OWLDataRange;
+import org.semanticweb.owlapi.model.OWLDatatype;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
@@ -117,12 +118,11 @@ public class Property implements IProperty {
 						_manager.manager.getOntologies())) {
 
 					if (c.isDatatype()) {
-//						OWL2DataType dtype = (OWL2Datatype) c;
-//						// FIXME! complete this
-//						IConcept tltype = Thinklab.get().getXSDMapping(dtype.getURI().toString());
-//						if (tltype != null) {
-//							ret.add(tltype);
-//						}
+						OWLDatatype type = c.asOWLDatatype();
+						IConcept tltype = _manager.getDatatypeMapping(type.getIRI().toString());
+						if (tltype != null) {
+							ret.add(tltype);
+						}
 					}
 				}
 			} else if (_owl.isOWLObjectProperty()) {
@@ -315,7 +315,10 @@ public class Property implements IProperty {
 
 	@Override
 	public boolean equals(Object obj) {
-		return  obj instanceof Property ? toString().equals(obj.toString()) : false;
+		return  obj instanceof Property ? 
+				toString().equals(obj.toString()) :
+				(obj instanceof String ? ((String)obj).equals(toString()) : false);
+
 	}
 
 	@Override
