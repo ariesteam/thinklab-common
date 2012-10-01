@@ -232,7 +232,7 @@ public class Ontology implements IOntology {
 				} else if (axiom.is(IAxiom.DATA_PROPERTY_RANGE)) {
 					
 				} else if (axiom.is(IAxiom.OBJECT_PROPERTY_ASSERTION)) {
-
+					
 					OWLObjectProperty p = factory.getOWLObjectProperty(IRI.create(_prefix + "#" + axiom.getArgument(0)));
 					_propertyIDs.add(axiom.getArgument(0).toString());
 					_opropertyIDs.add(axiom.getArgument(0).toString());
@@ -240,7 +240,9 @@ public class Ontology implements IOntology {
 				} else if (axiom.is(IAxiom.OBJECT_PROPERTY_DOMAIN)) {
 					
 				} else if (axiom.is(IAxiom.OBJECT_PROPERTY_RANGE)) {
-					
+
+				
+				
 				} else if (axiom.is(IAxiom.DATATYPE_DEFINITION)) {
 					
 				} else if (axiom.is(IAxiom.DISJOINT_CLASSES)) {
