@@ -29,7 +29,6 @@ import org.integratedmodelling.thinklab.api.modelling.INamespace;
 import org.integratedmodelling.thinklab.api.modelling.parsing.INamespaceDefinition;
 import org.integratedmodelling.thinklab.common.utils.CamelCase;
 import org.integratedmodelling.thinklab.common.utils.CopyURL;
-import org.integratedmodelling.thinklab.common.utils.Debug;
 import org.integratedmodelling.thinklab.common.utils.MiscUtilities;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
