@@ -29,6 +29,7 @@ import org.integratedmodelling.thinklab.api.modelling.INamespace;
 import org.integratedmodelling.thinklab.api.modelling.parsing.INamespaceDefinition;
 import org.integratedmodelling.thinklab.common.utils.CamelCase;
 import org.integratedmodelling.thinklab.common.utils.CopyURL;
+import org.integratedmodelling.thinklab.common.utils.Debug;
 import org.integratedmodelling.thinklab.common.utils.MiscUtilities;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
@@ -337,6 +338,10 @@ public class OWL implements IModelParser, IModelSerializer {
 			IOntology o = _ontologies.get(st.getConceptSpace());
 			if (o == null)
 				return null;
+			
+			if (concept.toString().equals("aries.locations.test:hasGroundElevation")) {
+				System.out.println("tartarpm");
+			}
 			return o.getProperty(st.getLocalName());
 		}
 		return null;
@@ -468,7 +473,7 @@ public class OWL implements IModelParser, IModelSerializer {
 				 * already imported- wrap it and use it as is.
 				 */
 				OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
-				if (ont != null) {
+				if (ont != null && _ontologies.get(pth) == null) {
 					_ontologies.put(pth, new Ontology(ont, pth, this));
 					_iri2ns.put(ont.getOntologyID().getDefaultDocumentIRI().toString(), pth);
 				}
@@ -504,7 +509,7 @@ public class OWL implements IModelParser, IModelSerializer {
 			 * already imported- wrap it and use it as is.
 			 */
 			OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
-			if (ont != null) {
+			if (ont != null && _ontologies.get(id) == null) {
 				_ontologies.put(id, new Ontology(ont, id, this));
 				_iri2ns.put(ont.getOntologyID().getDefaultDocumentIRI().toString(), id);
 			}
@@ -529,7 +534,7 @@ public class OWL implements IModelParser, IModelSerializer {
 	}
 	
 	public void releaseOntology(IOntology ontology) {
-	
+		
 		// TODO remove from _csIndex - should be harmless to leave for now
 		INamespace ns = _namespaces.get(ontology.getConceptSpace());
 		if (ns != null) {

@@ -22,6 +22,7 @@ import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDataProperty;
+import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyChangeException;
@@ -63,6 +64,7 @@ public class Ontology implements IOntology {
 	private String _resourceUrl;
 	
 	Ontology(OWLOntology ontology, String id, OWL manager) {
+		
 		_id = id;
 		_ontology = ontology;
 		_manager = manager;
@@ -229,7 +231,24 @@ public class Ontology implements IOntology {
 
 				} else if (axiom.is(IAxiom.DATA_PROPERTY_DOMAIN)) {
 					
+					OWLEntity property = findProperty(axiom.getArgument(0).toString(), true);
+					OWLClass classExp = findClass(axiom.getArgument(1).toString());
+					
+					_manager.manager.addAxiom(
+							_ontology,
+							factory.getOWLDataPropertyDomainAxiom(property.asOWLDataProperty(), classExp));
+
+					
 				} else if (axiom.is(IAxiom.DATA_PROPERTY_RANGE)) {
+					
+					OWLEntity property = findProperty(axiom.getArgument(0).toString(), true);
+					/*
+					 * TODO XSD stuff
+					 */
+					
+//					_manager.manager.addAxiom(
+//							_ontology,
+//							factory.getOWLDataPropertyRangeAxiom(property.asOWLDataProperty(), classExp));
 					
 				} else if (axiom.is(IAxiom.OBJECT_PROPERTY_ASSERTION)) {
 					
@@ -238,10 +257,23 @@ public class Ontology implements IOntology {
 					_opropertyIDs.add(axiom.getArgument(0).toString());
 					
 				} else if (axiom.is(IAxiom.OBJECT_PROPERTY_DOMAIN)) {
+
+					OWLEntity property = findProperty(axiom.getArgument(0).toString(), false);
+					OWLClass classExp = findClass(axiom.getArgument(1).toString());
+					
+					_manager.manager.addAxiom(
+							_ontology,
+							factory.getOWLObjectPropertyDomainAxiom(property.asOWLObjectProperty(), classExp));
 					
 				} else if (axiom.is(IAxiom.OBJECT_PROPERTY_RANGE)) {
 
-				
+					OWLEntity property = findProperty(axiom.getArgument(0).toString(), false);
+					OWLClass classExp = findClass(axiom.getArgument(1).toString());
+					
+					_manager.manager.addAxiom(
+							_ontology,
+							factory.getOWLObjectPropertyRangeAxiom(property.asOWLObjectProperty(), classExp));
+
 				
 				} else if (axiom.is(IAxiom.DATATYPE_DEFINITION)) {
 					
@@ -334,6 +366,26 @@ public class Ontology implements IOntology {
 			return ((Concept)cc)._owl;
 		} 
 		return _ontology.getOWLOntologyManager().getOWLDataFactory().getOWLClass(IRI.create(_prefix + "#" + c));
+	}
+
+	private OWLEntity findProperty(String c, boolean isData) throws ThinklabValidationException {
+		
+		if (c.contains(":")) {
+			
+			IProperty cc = _manager.getProperty(c);
+			if (cc == null)
+				throw new ThinklabValidationException("property " + c + " does not exist");
+
+			/*
+			 * TODO ensure ontology is imported?
+			 */
+			
+			return ((Property)cc)._owl;
+		} 
+		return 
+			isData? 
+				_ontology.getOWLOntologyManager().getOWLDataFactory().getOWLDataProperty(IRI.create(_prefix + "#" + c)) :
+				_ontology.getOWLOntologyManager().getOWLDataFactory().getOWLObjectProperty(IRI.create(_prefix + "#" + c));
 	}
 
 	@Override
